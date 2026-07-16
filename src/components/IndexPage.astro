@@ -14,7 +14,7 @@ import SiteHeader from './SiteHeader.astro';
 import SiteFooter from './SiteFooter.astro';
 import { projects } from '../data/projects';
 import { coverFor } from '../data/layout';
-import { frameGeometry, srcStyle, imgStyle } from '../data/frame';
+import { frameGeometry, srcStyle, imgStyle, normRot } from '../data/frame';
 import type { Lang } from '../i18n/ui';
 
 interface Props {
@@ -23,17 +23,30 @@ interface Props {
 
 const { lang } = Astro.props;
 
-/** Every card is the same shape, so the grid reads as a set. */
+/** Every card is the same shape, so the grid reads as a set — except the
+ * first project, which is featured: full row, panoramic frame. */
 const CARD_ASPECT = 3 / 2;
+const FEATURED_ASPECT = 12 / 5;
 const candidates = [400, 700, 1000, 1400];
 
-const cards = projects.map((p) => {
+const cards = projects.map((p, i) => {
   const cover = coverFor(p.slug, p.cover);
+  const featured = i === 0;
+  let crop = cover?.crop;
+  // The featured frame is panoramic: a cover that reads portrait on the canvas
+  // is laid on its side here so it fills horizontally (the canvas keeps its
+  // own orientation — this quarter turn exists only on the index).
+  if (cover && crop && featured && frameGeometry(cover.na, { ...crop, aspect: null }).aspect < 1) {
+    crop = { ...crop, rot: normRot((crop.rot ?? 0) + 90) };
+  }
   return {
     p,
     cover,
+    featured,
     // Same crop, refitted to the card: rotation and trim are preserved.
-    g: cover ? frameGeometry(cover.na, { ...cover.crop, aspect: CARD_ASPECT }) : null,
+    g: cover
+      ? frameGeometry(cover.na, { ...crop, aspect: featured ? FEATURED_ASPECT : CARD_ASPECT })
+      : null,
   };
 });
 ---
@@ -44,8 +57,8 @@ const cards = projects.map((p) => {
   <main id="main" class="container">
     <ul class="grid">
       {
-        cards.map(({ p, cover, g }) => (
-          <li>
+        cards.map(({ p, cover, g, featured }) => (
+          <li class:list={{ feat: featured }}>
             <a class="card" href={`${lang === 'en' ? '' : `/${lang}`}/projects/${p.slug}/`}>
               <span class="card__frame">
                 {cover && g && (
@@ -54,15 +67,14 @@ const cards = projects.map((p) => {
                       src={cover.src}
                       alt={p.title[lang]}
                       widths={candidates.filter((w) => w <= cover.src.width)}
-                      sizes="(min-width: 60rem) 30vw, (min-width: 40rem) 45vw, 100vw"
-                      loading="lazy"
+                      sizes={featured ? '92vw' : '(min-width: 60rem) 30vw, (min-width: 40rem) 45vw, 100vw'}
+                      loading={featured ? 'eager' : 'lazy'}
                       style={imgStyle(g)}
                     />
                   </span>
                 )}
               </span>
               <span class="card__title">{p.title[lang]}</span>
-              <span class="card__meta">{[p.type[lang], p.year].filter(Boolean).join(', ')}</span>
             </a>
           </li>
         ))
@@ -137,9 +149,17 @@ const cards = projects.map((p) => {
     color: var(--ink);
   }
 
-  .card__meta {
-    display: block;
-    font-size: var(--fs-s);
-    color: var(--grey);
+  /* Featured project: full row, panoramic frame, slightly larger title. */
+  .feat {
+    grid-column: 1 / -1;
+  }
+
+  .feat .card__frame {
+    aspect-ratio: 12 / 5;
+  }
+
+  .feat .card__title {
+    font-size: var(--fs-m);
+    margin-top: 0.7rem;
   }
 </style>

@@ -9,6 +9,7 @@ import SiteHeader from './SiteHeader.astro';
 import SiteFooter from './SiteFooter.astro';
 import ProjectCanvas from './ProjectCanvas.astro';
 import CanvasEditor from './CanvasEditor.astro';
+import ZoomBar from './ZoomBar.astro';
 import { t, type Lang } from '../i18n/ui';
 import { site } from '../data/site';
 import type { Project } from '../data/projects';
@@ -20,6 +21,10 @@ interface Props {
 
 const { project, lang } = Astro.props;
 const path = `projects/${project.slug}/`;
+const indexHref = lang === 'en' ? '/' : `/${lang}/`;
+
+/** The site owner's name as written in credits — rendered bold so it stands out. */
+const ME = 'Àlex Santaeulàlia';
 
 const fitxa = [
   { label: t(lang, 'fitxa_program'), value: project.type[lang] },
@@ -34,6 +39,8 @@ const fitxa = [
 
   <main id="main">
     <div class="container">
+      <ZoomBar lang={lang} />
+
       <header class="pj">
         <h1 class="pj__title">{project.title[lang]}</h1>
 
@@ -54,6 +61,31 @@ const fitxa = [
       </header>
 
       <ProjectCanvas slug={project.slug} title={project.title[lang]} />
+
+      {
+        project.credits && project.credits.length > 0 && (
+          <footer class="pj-credits">
+            <h2 class="pj-credits__title">{t(lang, 'credits')}</h2>
+            <dl class="pj__fitxa">
+              {project.credits.map((c) => (
+                <div class="pj__row">
+                  <dt>{c.label[lang]}:</dt>
+                  <dd>
+                    {c.names.map((n, i) => (
+                      <>
+                        {i > 0 && ', '}
+                        {n === ME ? <strong>{n}</strong> : n}
+                      </>
+                    ))}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </footer>
+        )
+      }
+
+      <a class="pj-back" href={indexHref}>← {t(lang, 'back_to_index')}</a>
     </div>
   </main>
 
@@ -95,5 +127,31 @@ const fitxa = [
   .pj__concept {
     font-size: var(--fs-m);
     color: var(--ink-soft);
+  }
+
+  /* Credits: a quiet block after the canvas, same voice as the fitxa. */
+  .pj-credits {
+    max-width: var(--measure);
+    margin-top: 3rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--hairline, #e3e3e0);
+  }
+
+  .pj-credits__title {
+    font-size: var(--fs-s);
+    font-weight: 500;
+    margin-bottom: 0.6rem;
+  }
+
+  /* The way back home from the bottom of a long canvas. */
+  .pj-back {
+    display: inline-block;
+    margin-top: 2.4rem;
+    font-size: var(--fs-s);
+    color: var(--grey);
+  }
+
+  .pj-back:hover {
+    color: var(--ink);
   }
 </style>

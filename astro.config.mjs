@@ -107,7 +107,11 @@ function editorEndpoints() {
 export default defineConfig({
   // Canonical URL — used for canonical links, hreflang alternates and the
   // sitemap. Must match the domain the site is actually served from.
-  site: 'https://alexartazcoz.com',
+  // (GitHub Pages user site for now; swap for the custom domain when bought.)
+  site: 'https://alexsantae160305-glitch.github.io',
+
+  // The floating dev toolbar gets in the way of the canvas editor — off for good.
+  devToolbar: { enabled: false },
 
   i18n: {
     defaultLocale: 'en',
