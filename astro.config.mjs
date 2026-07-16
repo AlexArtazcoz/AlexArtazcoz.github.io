@@ -105,8 +105,9 @@ function editorEndpoints() {
 
 // https://astro.build/config
 export default defineConfig({
-  // ★ Set this to your real domain before deploying.
-  site: 'https://your-domain.example',
+  // Canonical URL — used for canonical links, hreflang alternates and the
+  // sitemap. Must match the domain the site is actually served from.
+  site: 'https://alexartazcoz.com',
 
   i18n: {
     defaultLocale: 'en',

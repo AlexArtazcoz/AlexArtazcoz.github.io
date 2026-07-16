@@ -26,7 +26,7 @@ export interface SkillGroup {
 
 export const site = {
   /** Shown as the wordmark (top-left) and in the browser title. */
-  name: 'Alex Santaeulalia',
+  name: 'Alex Artazcoz',
 
   /** One-line role under your name in the hero. */
   role: {

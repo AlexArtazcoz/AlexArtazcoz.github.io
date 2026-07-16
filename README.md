@@ -47,9 +47,9 @@ placeholders stand in — the layout is identical either way.
 
 English is served at `/`, Català at `/ca/`, Español at `/es/`. To change the set
 of languages, edit the `languages` array and `ui` strings in `src/i18n/ui.ts` and
-add/remove a matching page under `src/pages/`. Set your real domain in
-`astro.config.mjs` (`site:`) before deploying so canonical URLs, `hreflang` and
-the sitemap are correct.
+add/remove a matching page under `src/pages/`. The canonical domain lives in
+`astro.config.mjs` (`site:`) and drives canonical URLs, `hreflang` and the
+sitemap — keep it matching wherever the site is actually served from.
 
 ## Deploy
 
