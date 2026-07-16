@@ -68,6 +68,27 @@ export interface ResolvedItem extends Item {
 }
 
 /**
+ * The image shown on a project's index card, together with the framing it was
+ * given on the canvas (rotation, trim, focal point, zoom) — so a cover looks
+ * the way the image was composed, just fitted to the card's shape.
+ *
+ * Priority: the cover picked in the editor → an explicit fallback → the first
+ * image on the canvas.
+ */
+export function coverFor(
+  slug: string,
+  fallbackName?: string,
+): { src: ImageMetadata; na: number; crop: Crop } | undefined {
+  const canvas = canvasFor(slug);
+  const name = canvas.cover ?? fallbackName ?? canvas.items[0]?.img;
+  if (!name) return undefined;
+  const img = findImage(slug, name);
+  if (!img) return undefined;
+  const item = canvas.items.find((i) => i.img === name);
+  return { src: img.src, na: naturalAspect(img), crop: item?.crop ?? defaultCrop() };
+}
+
+/**
  * Visible, resolved items ready to render. The canvas height always hugs the
  * content — it ends just below the last image — so a composition never trails
  * empty space, whatever height happens to be stored.

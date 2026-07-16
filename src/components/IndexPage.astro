@@ -2,14 +2,19 @@
 /**
  * The homepage IS the project index (as on the reference sites): a quiet
  * 3-column grid of thumbnails with the title and a grey meta line below each.
+ *
+ * A cover keeps the framing it was given on the project's canvas (rotation,
+ * trim, focal point, zoom) — the shared frame engine just refits it to the
+ * card's shape. Covers are shown in black & white so the index reads as one
+ * balanced set.
  */
 import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteHeader from './SiteHeader.astro';
 import SiteFooter from './SiteFooter.astro';
 import { projects } from '../data/projects';
-import { canvasFor } from '../data/layout';
-import { findImage } from '../data/assets';
+import { coverFor } from '../data/layout';
+import { frameGeometry, srcStyle, imgStyle } from '../data/frame';
 import type { Lang } from '../i18n/ui';
 
 interface Props {
@@ -18,17 +23,19 @@ interface Props {
 
 const { lang } = Astro.props;
 
-/**
- * Cover image for a project, in priority order: the one chosen in the layout
- * editor (★ Portada), then `project.cover`, then the canvas's first image.
- */
-function coverOf(slug: string, coverName?: string) {
-  const canvas = canvasFor(slug);
-  const name = canvas.cover ?? coverName ?? canvas.items[0]?.img;
-  return name ? findImage(slug, name) : undefined;
-}
+/** Every card is the same shape, so the grid reads as a set. */
+const CARD_ASPECT = 3 / 2;
+const candidates = [400, 700, 1000, 1400];
 
-const cards = projects.map((p) => ({ p, cover: coverOf(p.slug, p.cover) }));
+const cards = projects.map((p) => {
+  const cover = coverFor(p.slug, p.cover);
+  return {
+    p,
+    cover,
+    // Same crop, refitted to the card: rotation and trim are preserved.
+    g: cover ? frameGeometry(cover.na, { ...cover.crop, aspect: CARD_ASPECT }) : null,
+  };
+});
 ---
 
 <BaseLayout lang={lang} path="">
@@ -37,24 +44,25 @@ const cards = projects.map((p) => ({ p, cover: coverOf(p.slug, p.cover) }));
   <main id="main" class="container">
     <ul class="grid">
       {
-        cards.map(({ p, cover }) => (
+        cards.map(({ p, cover, g }) => (
           <li>
             <a class="card" href={`${lang === 'en' ? '' : `/${lang}`}/projects/${p.slug}/`}>
               <span class="card__frame">
-                {cover && (
-                  <Image
-                    src={cover.src}
-                    alt={p.title[lang]}
-                    widths={[400, 700, 1000].filter((w) => w <= cover.src.width)}
-                    sizes="(min-width: 60rem) 30vw, (min-width: 40rem) 45vw, 100vw"
-                    loading="lazy"
-                  />
+                {cover && g && (
+                  <span class="card__src" style={srcStyle(g)}>
+                    <Image
+                      src={cover.src}
+                      alt={p.title[lang]}
+                      widths={candidates.filter((w) => w <= cover.src.width)}
+                      sizes="(min-width: 60rem) 30vw, (min-width: 40rem) 45vw, 100vw"
+                      loading="lazy"
+                      style={imgStyle(g)}
+                    />
+                  </span>
                 )}
               </span>
               <span class="card__title">{p.title[lang]}</span>
-              <span class="card__meta">
-                {[p.type[lang], p.year].filter(Boolean).join(', ')}
-              </span>
+              <span class="card__meta">{[p.type[lang], p.year].filter(Boolean).join(', ')}</span>
             </a>
           </li>
         ))
@@ -94,17 +102,26 @@ const cards = projects.map((p) => ({ p, cover: coverOf(p.slug, p.cover) }));
 
   .card__frame {
     display: block;
+    position: relative;
     aspect-ratio: 3 / 2;
     overflow: hidden;
     background: #f4f4f2;
   }
 
-  /* Covers sit in black & white so the index reads as one balanced set;
-     colour returns on hover. */
+  /* The trimmed source box: cover-sized then rotated (see data/frame.ts). */
+  .card__src {
+    display: block;
+    position: absolute;
+    overflow: hidden;
+    transform-origin: center;
+  }
+
+  /* Sized/offset by the frame engine; max-width must be released because the
+     global reset caps images at 100%. Colour returns on hover. */
   .card__frame :global(img) {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    position: absolute;
+    display: block;
+    max-width: none;
     filter: grayscale(1);
     transition: filter 0.25s ease;
   }
