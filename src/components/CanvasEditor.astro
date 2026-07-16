@@ -5,6 +5,10 @@
  * overlaps — while dragging you may pass over other images, and on drop they
  * are pushed down to make room (insertion), so any image can become the first.
  *
+ * Images can be handled one by one or as a pack: dragging a rubber band across
+ * the empty canvas (or Shift/Ctrl+clicking) selects several at once, which then
+ * move rigidly together and share the panel's tools.
+ *
  * Tools: snap guides, arrow-key nudging, width presets, quarter-turn rotation,
  * edge trim (cuts dirty borders without zooming), frame shape, zoom, reframing,
  * cover selection, deletion, and adding images or PDFs (PDF pages are rendered
@@ -169,6 +173,15 @@
     background: #5c1f1f;
   }
 
+  .ed-panel button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  .ed-panel button:disabled:hover {
+    background: #2a2a2a;
+  }
+
   .ed-status {
     opacity: 0.8;
     min-width: 1rem;
@@ -254,8 +267,20 @@
     z-index: 5;
   }
 
-  :global(body.ed-on .canvas__item.ed-sel .ed-handle) {
+  /* Resizing is a single-image operation, so the handle only shows on a lone
+     selection — never on a pack. */
+  :global(body.ed-on .canvas__item.ed-solo .ed-handle) {
     display: block;
+  }
+
+  /* Rubber band drawn while sweeping the empty canvas to select a pack. */
+  :global(.ed-band) {
+    position: absolute;
+    z-index: 940;
+    border: 1px solid #1a6dff;
+    background: rgba(26, 109, 255, 0.12);
+    display: none;
+    pointer-events: none;
   }
 
   /* Snap guide lines. */
@@ -305,6 +330,7 @@
       na: number;
       el: HTMLElement;
     };
+    type Box = { x: number; y: number; w: number; h: number };
     type Stage = {
       stage: HTMLElement;
       h: number;
@@ -312,13 +338,15 @@
       items: Item[];
       gv: HTMLElement;
       gh: HTMLElement;
+      band: HTMLElement;
       naturalW: number;
     };
 
     const state: Record<string, Stage> = {};
     let editing = false;
     let panning = false;
-    let sel: { slug: string; item: Item } | null = null;
+    // The selection is a pack (often of one) and never spans two canvases.
+    let sel: { slug: string; items: Item[] } | null = null;
 
     const bar = document.querySelector('.ed-bar') as HTMLElement;
     const panel = document.querySelector('.ed-panel') as HTMLElement;
@@ -360,14 +388,14 @@
         el.addEventListener('pointerdown', (e) => onDown(e, slug, item));
         items.push(item);
       }
-      stage.addEventListener('pointerdown', (e) => {
-        if (editing && e.target === stage) deselect();
-      });
+      stage.addEventListener('pointerdown', (e) => onStageDown(e, slug));
       const gv = document.createElement('div');
       gv.className = 'ed-guide ed-guide--v';
       const gh = document.createElement('div');
       gh.className = 'ed-guide ed-guide--h';
-      stage.append(gv, gh);
+      const band = document.createElement('div');
+      band.className = 'ed-band';
+      stage.append(gv, gh, band);
       state[slug] = {
         stage,
         h: model.h,
@@ -375,6 +403,7 @@
         items,
         gv,
         gh,
+        band,
         naturalW: stage.getBoundingClientRect().width,
       };
       refreshCoverBadge(slug);
@@ -459,15 +488,27 @@
       a.y < b.y + itemH(b) - EPS &&
       a.y + itemH(a) > b.y + EPS;
 
+    /** Bounding box of a pack, in canvas units. */
+    function groupBox(items: Item[]): Box {
+      const x = Math.min(...items.map((i) => i.x));
+      const y = Math.min(...items.map((i) => i.y));
+      const right = Math.max(...items.map((i) => i.x + i.w));
+      const bottom = Math.max(...items.map((i) => i.y + itemH(i)));
+      return { x, y, w: right - x, h: bottom - y };
+    }
+
     /**
-     * Make the layout overlap-free. The anchor (just-dropped image) keeps its
-     * place; everything else is swept top-to-bottom and pushed below whatever
-     * it overlaps — so dropping an image onto the top row inserts it there.
+     * Make the layout overlap-free. The anchors (the just-dropped pack) keep
+     * their place; everything else is swept top-to-bottom and pushed below
+     * whatever it overlaps — so dropping images onto the top row inserts them
+     * there. Anchors never push each other: a pack moves rigidly, so if it was
+     * overlap-free before the drag it still is after it.
      */
-    function resolveOverlaps(slug: string, anchor?: Item) {
+    function resolveOverlaps(slug: string, anchors: Item[] = []) {
       const st = state[slug];
+      const anchored = new Set(anchors);
       const byY = [...st.items].sort((a, b) => a.y - b.y || a.x - b.x);
-      const order = anchor ? [anchor, ...byY.filter((i) => i !== anchor)] : byY;
+      const order = [...byY.filter((i) => anchored.has(i)), ...byY.filter((i) => !anchored.has(i))];
       const placed: Item[] = [];
       for (const it of order) {
         let guard = 0;
@@ -489,11 +530,11 @@
 
     /* ---- Snap guides ----------------------------------------------------- */
 
-    function snapTargets(slug: string, except: Item) {
+    function snapTargets(slug: string, except: Set<Item>) {
       const xs = [0, GAP, CANVAS_W / 2, CANVAS_W - GAP, CANVAS_W];
       const ys = [0, GAP];
       for (const o of state[slug].items) {
-        if (o === except) continue;
+        if (except.has(o)) continue;
         const oh = itemH(o);
         xs.push(o.x, o.x + o.w, o.x + o.w / 2, o.x + o.w + GAP, o.x - GAP);
         ys.push(o.y, o.y + oh, o.y + oh / 2, o.y + oh + GAP, o.y - GAP);
@@ -524,21 +565,94 @@
 
     const hideGuides = (slug: string) => showGuides(slug, null, null);
 
+    /* ---- Rubber band ------------------------------------------------------- */
+
+    function showBand(slug: string, b: Box) {
+      const st = state[slug];
+      st.band.style.display = 'block';
+      st.band.style.left = (b.x / CANVAS_W) * 100 + '%';
+      st.band.style.width = (b.w / CANVAS_W) * 100 + '%';
+      st.band.style.top = (b.y / st.h) * 100 + '%';
+      st.band.style.height = (b.h / st.h) * 100 + '%';
+    }
+
+    /** An image is caught by the band as soon as it is touched, not enclosed. */
+    const inBand = (it: Item, b: Box) =>
+      it.x < b.x + b.w && it.x + it.w > b.x && it.y < b.y + b.h && it.y + itemH(it) > b.y;
+
     /* ---- Pointer interactions --------------------------------------------- */
+
+    /** Sweeping the empty canvas draws a band; a bare click clears the pack. */
+    function onStageDown(e: PointerEvent, slug: string) {
+      const st = state[slug];
+      if (!editing || e.target !== st.stage) return;
+      e.preventDefault();
+      const additive = e.shiftKey || e.ctrlKey || e.metaKey;
+      const base = additive ? selectionOn(slug) : [];
+      const sx = e.clientX;
+      const sy = e.clientY;
+      // Re-measured on every move so scrolling mid-sweep can't skew the band.
+      const at = (ev: PointerEvent): { x: number; y: number } => {
+        const r = st.stage.getBoundingClientRect();
+        const perUnit = r.width / CANVAS_W;
+        return { x: (ev.clientX - r.left) / perUnit, y: (ev.clientY - r.top) / perUnit };
+      };
+      const start = at(e);
+      let dragging = false;
+
+      const move = (ev: PointerEvent) => {
+        if (!dragging && Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) < 4) return;
+        dragging = true;
+        const p = at(ev);
+        const box: Box = {
+          x: Math.min(start.x, p.x),
+          y: Math.min(start.y, p.y),
+          w: Math.abs(p.x - start.x),
+          h: Math.abs(p.y - start.y),
+        };
+        showBand(slug, box);
+        const hit = st.items.filter((i) => inBand(i, box) && !base.includes(i));
+        setSelection(slug, [...base, ...hit]);
+      };
+      const up = () => {
+        st.band.style.display = 'none';
+        if (!dragging && !additive) deselect();
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', up);
+      };
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+    }
 
     function onDown(e: PointerEvent, slug: string, it: Item) {
       if (!editing) return;
       e.preventDefault();
-      select(slug, it);
+
+      // Shift/Ctrl+click builds the pack up image by image, without dragging.
+      if (e.shiftKey || e.ctrlKey || e.metaKey) {
+        const base = selectionOn(slug);
+        setSelection(slug, base.includes(it) ? base.filter((i) => i !== it) : [...base, it]);
+        return;
+      }
+      // Grabbing an image already in the pack drags the whole pack; grabbing
+      // any other image selects just that one first.
+      if (!selectionOn(slug).includes(it)) setSelection(slug, [it]);
+
       const st = state[slug];
       const perUnit = st.stage.getBoundingClientRect().width / CANVAS_W;
       const sx = e.clientX;
       const sy = e.clientY;
-      const orig = { x: it.x, y: it.y, w: it.w, fx: it.crop.fx, fy: it.crop.fy };
       const isHandle = !!(e.target as HTMLElement).closest('.ed-handle');
       const mode = isHandle ? 'resize' : panning ? 'pan' : 'move';
-      const targets = snapTargets(slug, it);
-      if (mode !== 'pan') it.el.classList.add('ed-lift');
+      // Only moving is a pack operation: resizing and reframing act on the
+      // single image under the pointer.
+      const group = mode === 'move' ? selectionOn(slug).slice() : [it];
+      const orig = group.map((g) => ({ it: g, x: g.x, y: g.y }));
+      const origW = it.w;
+      const origF = { fx: it.crop.fx, fy: it.crop.fy };
+      const box = groupBox(group);
+      const targets = snapTargets(slug, new Set(group));
+      if (mode !== 'pan') group.forEach((g) => g.el.classList.add('ed-lift'));
 
       const move = (ev: PointerEvent) => {
         const dxu = (ev.clientX - sx) / perUnit;
@@ -547,23 +661,26 @@
         let hline: number | null = null;
 
         if (mode === 'move') {
-          let nx = clamp(orig.x + dxu, 0, CANVAS_W - it.w);
-          let ny = Math.max(0, orig.y + dyu);
-          const ih = itemH(it);
-          const sx2 = bestSnap([nx, nx + it.w, nx + it.w / 2], targets.xs);
+          // One delta for the whole pack — clamped and snapped on its bounding
+          // box, so the images keep their relative positions exactly.
+          let dx = clamp(dxu, -box.x, CANVAS_W - (box.x + box.w));
+          let dy = Math.max(dyu, -box.y);
+          const sx2 = bestSnap([box.x + dx, box.x + box.w + dx, box.x + box.w / 2 + dx], targets.xs);
           if (sx2) {
-            nx = clamp(nx + sx2.delta, 0, CANVAS_W - it.w);
+            dx = clamp(dx + sx2.delta, -box.x, CANVAS_W - (box.x + box.w));
             vline = sx2.line;
           }
-          const sy2 = bestSnap([ny, ny + ih, ny + ih / 2], targets.ys);
+          const sy2 = bestSnap([box.y + dy, box.y + box.h + dy, box.y + box.h / 2 + dy], targets.ys);
           if (sy2) {
-            ny = Math.max(0, ny + sy2.delta);
+            dy = Math.max(dy + sy2.delta, -box.y);
             hline = sy2.line;
           }
-          it.x = nx;
-          it.y = ny;
+          for (const o of orig) {
+            o.it.x = o.x + dx;
+            o.it.y = o.y + dy;
+          }
         } else if (mode === 'resize') {
-          let nw = clamp(orig.w + dxu, 40, CANVAS_W);
+          let nw = clamp(origW + dxu, 40, CANVAS_W);
           const sw = bestSnap([it.x + nw], targets.xs);
           if (sw) {
             nw = clamp(nw + sw.delta, 40, CANVAS_W);
@@ -572,17 +689,19 @@
           it.w = Math.min(nw, CANVAS_W - it.x);
         } else {
           const r = it.el.getBoundingClientRect();
-          it.crop.fx = clamp(orig.fx - ((ev.clientX - sx) / r.width) * 100, 0, 100);
-          it.crop.fy = clamp(orig.fy - ((ev.clientY - sy) / r.height) * 100, 0, 100);
+          it.crop.fx = clamp(origF.fx - ((ev.clientX - sx) / r.width) * 100, 0, 100);
+          it.crop.fy = clamp(origF.fy - ((ev.clientY - sy) / r.height) * 100, 0, 100);
         }
         showGuides(slug, vline, hline);
-        applyItem(slug, it);
-        grow(slug, it);
+        for (const g of group) {
+          applyItem(slug, g);
+          grow(slug, g);
+        }
       };
       const up = () => {
         hideGuides(slug);
-        it.el.classList.remove('ed-lift');
-        if (mode !== 'pan') resolveOverlaps(slug, it); // insertion: others make room
+        group.forEach((g) => g.el.classList.remove('ed-lift'));
+        if (mode !== 'pan') resolveOverlaps(slug, group); // insertion: others make room
         document.removeEventListener('pointermove', move);
         document.removeEventListener('pointerup', up);
       };
@@ -592,18 +711,39 @@
 
     /* ---- Selection & panel ------------------------------------------------ */
 
-    function select(slug: string, it: Item) {
-      if (sel && sel.item !== it) sel.item.el.classList.remove('ed-sel');
-      sel = { slug, item: it };
-      it.el.classList.add('ed-sel');
+    /** The current pack if it belongs to this canvas, else nothing. */
+    const selectionOn = (slug: string): Item[] => (sel && sel.slug === slug ? sel.items : []);
+
+    const sameSelection = (slug: string, items: Item[]) =>
+      !!sel &&
+      sel.slug === slug &&
+      sel.items.length === items.length &&
+      items.every((i) => sel!.items.includes(i));
+
+    /** Select a pack of images; the panel then acts on all of them at once. */
+    function setSelection(slug: string, items: Item[]) {
+      if (!items.length) {
+        deselect();
+        return;
+      }
+      if (sameSelection(slug, items)) return; // keeps a live band sweep cheap
+      sel?.items.forEach((i) => i.el.classList.remove('ed-sel', 'ed-solo'));
+      sel = { slug, items: items.slice() };
+      const solo = items.length === 1;
+      items.forEach((i) => {
+        i.el.classList.add('ed-sel');
+        i.el.classList.toggle('ed-solo', solo);
+      });
       panel.hidden = false;
-      syncPanel(it);
+      syncPanel(items[0]);
       panning = false;
       panBtn.classList.remove('ed-active');
+      status(solo ? '' : `${items.length} imatges seleccionades — es mouen juntes.`);
     }
 
     function deselect() {
-      if (sel) sel.item.el.classList.remove('ed-sel');
+      if (sel && sel.items.length > 1) status('');
+      sel?.items.forEach((i) => i.el.classList.remove('ed-sel', 'ed-solo'));
       sel = null;
       panel.hidden = true;
       panning = false;
@@ -630,17 +770,36 @@
       syncCover();
     }
 
+    /** The cover is a single image, so the button is dead for a pack. */
     function syncCover() {
-      coverBtn.classList.toggle('ed-active', !!sel && state[sel.slug].cover === sel.item.img);
+      const solo = sel && sel.items.length === 1 ? sel.items[0] : null;
+      coverBtn.disabled = !solo;
+      coverBtn.classList.toggle('ed-active', !!solo && state[sel!.slug].cover === solo.img);
     }
 
-    /** Apply a change to the selected image and reflow the canvas. */
+    /** Apply a change to every selected image and reflow the canvas. */
     function edit(fn: (it: Item) => void, reflow = true) {
       if (!sel) return;
-      fn(sel.item);
-      applyItem(sel.slug, sel.item);
-      if (reflow) resolveOverlaps(sel.slug, sel.item);
-      syncPanel(sel.item);
+      for (const it of sel.items) {
+        fn(it);
+        applyItem(sel.slug, it);
+      }
+      if (reflow) resolveOverlaps(sel.slug, sel.items);
+      syncPanel(sel.items[0]);
+    }
+
+    /** Nudge the selection, keeping the pack rigid against the canvas edges. */
+    function nudge(dx: number, dy: number) {
+      if (!sel) return;
+      const box = groupBox(sel.items);
+      const ddx = clamp(dx, -box.x, CANVAS_W - (box.x + box.w));
+      const ddy = Math.max(dy, -box.y);
+      for (const it of sel.items) {
+        it.x += ddx;
+        it.y += ddy;
+        applyItem(sel.slug, it);
+      }
+      resolveOverlaps(sel.slug, sel.items);
     }
 
     /* ---- Add images & PDFs ------------------------------------------------ */
@@ -860,31 +1019,35 @@
     });
 
     coverBtn.addEventListener('click', () => {
-      if (!sel) return;
-      const st = state[sel.slug];
-      st.cover = st.cover === sel.item.img ? null : sel.item.img;
-      refreshCoverBadge(sel.slug);
+      const it = sel && sel.items.length === 1 ? sel.items[0] : null;
+      if (!it) return;
+      const st = state[sel!.slug];
+      st.cover = st.cover === it.img ? null : it.img;
+      refreshCoverBadge(sel!.slug);
       syncCover();
       status(st.cover ? 'Portada: ' + st.cover : 'Sense portada (es farà servir la primera imatge)');
     });
 
     deleteBtn.addEventListener('click', () => {
       if (!sel) return;
-      const { slug, item } = sel;
+      const { slug, items } = sel;
       const st = state[slug];
-      st.items = st.items.filter((i) => i !== item);
-      if (st.cover === item.img) st.cover = null;
-      item.el.remove();
+      const gone = new Set(items);
+      st.items = st.items.filter((i) => !gone.has(i));
+      if (st.cover && items.some((i) => i.img === st.cover)) st.cover = null;
+      items.forEach((i) => i.el.remove());
+      const n = items.length;
       deselect();
       resolveOverlaps(slug);
       status(
         st.items.length
-          ? 'Imatge eliminada del llenç — recorda Desar. (El fitxer es conserva a la carpeta del projecte.)'
+          ? `${n > 1 ? n + ' imatges eliminades' : 'Imatge eliminada'} del llenç — recorda Desar. ` +
+              `(${n > 1 ? 'Els fitxers es conserven' : 'El fitxer es conserva'} a la carpeta del projecte.)`
           : 'Llenç buit: en desar es restaurarà la disposició per defecte.',
       );
     });
 
-    // Arrow keys nudge the selected image (Shift = big steps). Esc deselects.
+    // Arrow keys nudge the selection (Shift = big steps). Esc deselects.
     document.addEventListener('keydown', (e) => {
       if (!editing || !sel) return;
       const a = document.activeElement;
@@ -896,12 +1059,10 @@
       if (!e.key.startsWith('Arrow')) return;
       e.preventDefault();
       const step = e.shiftKey ? 10 : 2;
-      edit((it) => {
-        if (e.key === 'ArrowLeft') it.x = clamp(it.x - step, 0, CANVAS_W - it.w);
-        if (e.key === 'ArrowRight') it.x = clamp(it.x + step, 0, CANVAS_W - it.w);
-        if (e.key === 'ArrowUp') it.y = Math.max(0, it.y - step);
-        if (e.key === 'ArrowDown') it.y = it.y + step;
-      });
+      nudge(
+        e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0,
+        e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0,
+      );
     });
 
     function setEditing(on: boolean) {
@@ -916,7 +1077,10 @@
       if (on) {
         const first = Object.values(state)[0];
         first?.stage.scrollIntoView({ block: 'start', behavior: 'auto' });
-        status('Vista general — arrossega lliurement; en deixar anar, les altres fan lloc.');
+        status(
+          'Vista general — arrossega lliurement; en deixar anar, les altres fan lloc. ' +
+            'Arrossega sobre el llenç buit (o Maj+clic) per seleccionar-ne diverses i moure-les juntes.',
+        );
       } else {
         status('');
       }
