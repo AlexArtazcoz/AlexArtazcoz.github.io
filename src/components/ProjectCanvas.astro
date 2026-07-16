@@ -1,0 +1,107 @@
+---
+/**
+ * Renders a project's free-canvas composition. The stage keeps a fixed
+ * aspect-ratio (canvas width : height) so the whole arrangement scales down
+ * intact on smaller screens. Each image is absolutely positioned in percentages
+ * of the stage, and framed non-destructively (trim → rotate → shape → zoom →
+ * pan) by the shared geometry in src/data/frame.ts.
+ */
+import { Image } from 'astro:assets';
+import { renderCanvas, CANVAS_W } from '../data/layout';
+import { frameGeometry, srcStyle, imgStyle } from '../data/frame';
+
+interface Props {
+  slug: string;
+  title: string;
+}
+
+const { slug, title } = Astro.props;
+const canvas = renderCanvas(slug);
+const candidates = [400, 800, 1200, 1600, 2000];
+
+// Compact model consumed by the (dev-only) layout editor.
+const editorModel = {
+  h: canvas.h,
+  cover: canvas.cover ?? null,
+  items: canvas.items.map((it) => ({
+    img: it.img,
+    x: it.x,
+    y: it.y,
+    w: it.w,
+    z: it.z,
+    crop: it.crop,
+    na: Math.round(it.na * 10000) / 10000,
+  })),
+};
+---
+
+<div class="canvas" data-canvas={slug} style={`aspect-ratio: ${CANVAS_W} / ${canvas.h};`}>
+  {
+    canvas.items.map((it) => {
+      const left = (it.x / CANVAS_W) * 100;
+      const top = (it.y / canvas.h) * 100;
+      const width = (it.w / CANVAS_W) * 100;
+      const widths = candidates.filter((w) => w <= it.src.width);
+      const g = frameGeometry(it.na, it.crop);
+      return (
+        <figure
+          class="canvas__item"
+          data-img={it.img}
+          style={`left:${left}%; top:${top}%; width:${width}%; z-index:${it.z};`}
+        >
+          <div class="canvas__frame" style={`aspect-ratio:${g.aspect};`}>
+            <div class="canvas__src" style={srcStyle(g)}>
+              <Image
+                src={it.src}
+                alt={title}
+                widths={widths.length ? widths : [it.src.width]}
+                sizes={`${Math.max(10, Math.round(width))}vw`}
+                loading="lazy"
+                style={imgStyle(g)}
+              />
+            </div>
+          </div>
+        </figure>
+      );
+    })
+  }
+  {
+    import.meta.env.DEV && (
+      <script type="application/json" class="canvas-model" set:html={JSON.stringify(editorModel)} />
+    )
+  }
+</div>
+
+<style>
+  .canvas {
+    position: relative;
+    width: 100%;
+  }
+
+  .canvas__item {
+    position: absolute;
+    margin: 0;
+  }
+
+  .canvas__frame {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: #f4f4f2;
+  }
+
+  /* The trimmed source box: cover-sized then rotated (see data/frame.ts). */
+  .canvas__src {
+    position: absolute;
+    overflow: hidden;
+    transform-origin: center;
+  }
+
+  /* Sized/offset so the trimmed rectangle exactly fills .canvas__src.
+     max-width must be released: the global reset caps images at 100%. */
+  .canvas__src :global(img) {
+    position: absolute;
+    display: block;
+    max-width: none;
+  }
+</style>

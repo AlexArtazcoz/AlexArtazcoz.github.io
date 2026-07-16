@@ -1,0 +1,13 @@
+---
+// Páginas de proyecto en español — /es/projects/<slug>/
+import ProjectPageLayout from '../../../components/ProjectPageLayout.astro';
+import { projects } from '../../../data/projects';
+
+export function getStaticPaths() {
+  return projects.map((project) => ({ params: { slug: project.slug }, props: { project } }));
+}
+
+const { project } = Astro.props;
+---
+
+<ProjectPageLayout project={project} lang="es" />

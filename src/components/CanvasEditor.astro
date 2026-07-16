@@ -1,0 +1,957 @@
+---
+/**
+ * Dev-only free-canvas layout editor, in "overview" mode: entering edit shrinks
+ * the artboard so the whole composition is visible, and the final layout never
+ * overlaps — while dragging you may pass over other images, and on drop they
+ * are pushed down to make room (insertion), so any image can become the first.
+ *
+ * Tools: snap guides, arrow-key nudging, width presets, quarter-turn rotation,
+ * edge trim (cuts dirty borders without zooming), frame shape, zoom, reframing,
+ * cover selection, deletion, and adding images or PDFs (PDF pages are rendered
+ * to images in the browser via pdf.js and uploaded to the project's folder).
+ *
+ * Security: only rendered when import.meta.env.DEV is true, the whole script is
+ * compiled out of production builds, the save/upload endpoints only exist on
+ * the dev server, and at runtime the editor refuses to activate off localhost —
+ * so a published or shared portfolio can never be edited by anyone.
+ */
+---
+
+<div class="ed-bar" role="toolbar" aria-label="Editor de disposició">
+  <button type="button" data-ed="toggle">Editar disposició</button>
+  <button type="button" data-ed="add" hidden>+ Afegir</button>
+  <button type="button" data-ed="save" hidden>Desar</button>
+  <span class="ed-status" aria-live="polite"></span>
+  <input
+    type="file"
+    data-ed-file
+    accept="image/jpeg,image/png,image/webp,application/pdf,.pdf"
+    multiple
+    hidden
+  />
+</div>
+
+<div class="ed-panel" hidden>
+  <div class="ed-grp">
+    <span class="ed-lbl">Forma</span>
+    <button type="button" data-aspect="free">Lliure</button>
+    <button type="button" data-aspect="1">1:1</button>
+    <button type="button" data-aspect="1.3333">4:3</button>
+    <button type="button" data-aspect="0.75">3:4</button>
+    <button type="button" data-aspect="1.5">3:2</button>
+    <button type="button" data-aspect="1.7778">16:9</button>
+  </div>
+
+  <div class="ed-grp">
+    <span class="ed-lbl">Girar</span>
+    <button type="button" data-ed="rot-l" title="Girar 90° a l’esquerra">⟲</button>
+    <button type="button" data-ed="rot-r" title="Girar 90° a la dreta">⟳</button>
+  </div>
+
+  <div class="ed-grp">
+    <span class="ed-lbl">Amplada</span>
+    <button type="button" data-w="304" title="Un terç">⅓</button>
+    <button type="button" data-w="467" title="Mitja">½</button>
+    <button type="button" data-w="630" title="Dos terços">⅔</button>
+    <button type="button" data-w="956" title="Tota l’amplada">1/1</button>
+  </div>
+
+  <label class="ed-grp">
+    <span class="ed-lbl">Zoom</span>
+    <input type="range" data-zoom min="1" max="3" step="0.01" value="1" />
+  </label>
+
+  <div class="ed-grp ed-trim">
+    <span class="ed-lbl">Vores</span>
+    <label title="Retallar per dalt"
+      >▲<input type="range" data-trim="t" min="0" max="40" step="0.5" value="0" /></label
+    >
+    <label title="Retallar per baix"
+      >▼<input type="range" data-trim="b" min="0" max="40" step="0.5" value="0" /></label
+    >
+    <label title="Retallar per l’esquerra"
+      >◀<input type="range" data-trim="l" min="0" max="40" step="0.5" value="0" /></label
+    >
+    <label title="Retallar per la dreta"
+      >▶<input type="range" data-trim="r" min="0" max="40" step="0.5" value="0" /></label
+    >
+    <button type="button" data-ed="trim-reset" title="Treure el retall de vores">↺</button>
+  </div>
+
+  <div class="ed-grp">
+    <button type="button" data-ed="pan">Reenquadrar</button>
+    <button type="button" data-ed="cover">★ Portada</button>
+    <button type="button" data-ed="reset" title="Reiniciar vores, gir, forma i zoom">Reiniciar</button>
+    <button type="button" data-ed="delete" class="ed-danger">Eliminar</button>
+  </div>
+</div>
+
+<style>
+  .ed-bar {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 1000;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.4rem 0.5rem;
+    background: #141414;
+    color: #fafafa;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  .ed-panel {
+    position: fixed;
+    bottom: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 0.9rem;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: #141414;
+    color: #fafafa;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+    max-width: calc(100vw - 1.5rem);
+  }
+
+  .ed-panel[hidden] {
+    display: none;
+  }
+
+  .ed-grp {
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+  }
+
+  .ed-lbl {
+    opacity: 0.6;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 0.68rem;
+  }
+
+  .ed-bar button,
+  .ed-panel button {
+    background: #2a2a2a;
+    color: #fafafa;
+    border: 1px solid #3a3a3a;
+    border-radius: 5px;
+    padding: 0.3rem 0.6rem;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .ed-bar button:hover,
+  .ed-panel button:hover {
+    background: #383838;
+  }
+
+  .ed-panel button.ed-active {
+    background: #fafafa;
+    color: #141414;
+  }
+
+  .ed-panel button.ed-danger {
+    border-color: #7a2c2c;
+  }
+
+  .ed-panel button.ed-danger:hover {
+    background: #5c1f1f;
+  }
+
+  .ed-status {
+    opacity: 0.8;
+    min-width: 1rem;
+  }
+
+  input[type='range'][data-zoom] {
+    width: 7rem;
+  }
+
+  .ed-trim label {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    font-size: 0.66rem;
+    opacity: 0.85;
+  }
+
+  .ed-trim input[type='range'] {
+    width: 3.4rem;
+  }
+
+  /* Overview mode: the shrunken artboard gets a drawing-board look. */
+  :global(body.ed-on .canvas) {
+    margin-inline: auto;
+    outline: 1px solid #c9c9c4;
+    background:
+      linear-gradient(to right, rgba(20, 20, 20, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(20, 20, 20, 0.04) 1px, transparent 1px);
+    background-size: 5% 5%;
+  }
+
+  :global(body.ed-on .canvas__item) {
+    cursor: move;
+    outline: 1px dashed rgba(20, 20, 20, 0.35);
+    outline-offset: 1px;
+    user-select: none;
+    touch-action: none;
+  }
+
+  :global(body.ed-on .canvas__item img) {
+    pointer-events: none;
+  }
+
+  :global(body.ed-on .canvas__item.ed-sel) {
+    outline: 2px solid #1a6dff;
+    outline-offset: 1px;
+  }
+
+  /* While dragging, the image lifts and may pass over the others; overlaps are
+     resolved the moment it is dropped. */
+  :global(body.ed-on .canvas__item.ed-lift) {
+    opacity: 0.72;
+    z-index: 950 !important;
+  }
+
+  /* Cover badge on the image chosen as index cover. */
+  :global(body.ed-on .canvas__item.ed-cover::after) {
+    content: '★';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    z-index: 6;
+    background: #141414;
+    color: #fff;
+    font-size: 11px;
+    line-height: 1;
+    padding: 3px 4px;
+    border-radius: 3px;
+    pointer-events: none;
+  }
+
+  :global(.ed-handle) {
+    position: absolute;
+    right: -8px;
+    bottom: -8px;
+    width: 16px;
+    height: 16px;
+    background: #1a6dff;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    cursor: nwse-resize;
+    display: none;
+    z-index: 5;
+  }
+
+  :global(body.ed-on .canvas__item.ed-sel .ed-handle) {
+    display: block;
+  }
+
+  /* Snap guide lines. */
+  :global(.ed-guide) {
+    position: absolute;
+    background: #1a6dff;
+    display: none;
+    z-index: 900;
+    pointer-events: none;
+  }
+
+  :global(.ed-guide--v) {
+    width: 1px;
+    top: 0;
+    bottom: 0;
+  }
+
+  :global(.ed-guide--h) {
+    height: 1px;
+    left: 0;
+    right: 0;
+  }
+</style>
+
+<script>
+  import { frameGeometry, defaultCrop, noTrim, hasTrim, normRot, type Crop } from '../data/frame';
+
+  // Dev-only, and only on this machine: refuses to run off localhost so a
+  // shared/published portfolio can never expose editing to anyone else.
+  const isLocal = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+
+  if (import.meta.env.DEV && isLocal) {
+    const CANVAS_W = 1000;
+    const GAP = 22;
+    const SNAP = 6; // canvas units
+    const EPS = 0.5; // overlap tolerance so touching edges are allowed
+    const NEW_W = 467; // new images arrive half-width
+    const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+
+    type Item = {
+      img: string;
+      x: number;
+      y: number;
+      w: number;
+      z: number;
+      crop: Crop;
+      na: number;
+      el: HTMLElement;
+    };
+    type Stage = {
+      stage: HTMLElement;
+      h: number;
+      cover: string | null;
+      items: Item[];
+      gv: HTMLElement;
+      gh: HTMLElement;
+      naturalW: number;
+    };
+
+    const state: Record<string, Stage> = {};
+    let editing = false;
+    let panning = false;
+    let sel: { slug: string; item: Item } | null = null;
+
+    const bar = document.querySelector('.ed-bar') as HTMLElement;
+    const panel = document.querySelector('.ed-panel') as HTMLElement;
+    const toggleBtn = bar.querySelector('[data-ed="toggle"]') as HTMLButtonElement;
+    const addBtn = bar.querySelector('[data-ed="add"]') as HTMLButtonElement;
+    const saveBtn = bar.querySelector('[data-ed="save"]') as HTMLButtonElement;
+    const statusEl = bar.querySelector('.ed-status') as HTMLElement;
+    const fileInput = bar.querySelector('[data-ed-file]') as HTMLInputElement;
+    const zoomInput = panel.querySelector('[data-zoom]') as HTMLInputElement;
+    const panBtn = panel.querySelector('[data-ed="pan"]') as HTMLButtonElement;
+    const coverBtn = panel.querySelector('[data-ed="cover"]') as HTMLButtonElement;
+    const deleteBtn = panel.querySelector('[data-ed="delete"]') as HTMLButtonElement;
+
+    const geom = (it: Item) => frameGeometry(it.na, it.crop);
+    const itemH = (it: Item) => it.w / geom(it).aspect;
+    const status = (t: string) => (statusEl.textContent = t);
+
+    // Build state from the JSON model each ProjectCanvas embedded.
+    document.querySelectorAll<HTMLElement>('.canvas[data-canvas]').forEach((stage) => {
+      const slug = stage.dataset.canvas!;
+      const modelEl = stage.querySelector('.canvas-model');
+      if (!modelEl || !modelEl.textContent) return;
+      const model = JSON.parse(modelEl.textContent) as {
+        h: number;
+        cover: string | null;
+        items: Omit<Item, 'el'>[];
+      };
+      const items: Item[] = [];
+      for (const m of model.items) {
+        const el = stage.querySelector<HTMLElement>(
+          `.canvas__item[data-img="${CSS.escape(m.img)}"]`,
+        );
+        if (!el) continue;
+        // Fill in any crop fields older saved layouts don't have.
+        const item = { ...m, crop: { ...defaultCrop(), ...m.crop }, el } as Item;
+        const handle = document.createElement('div');
+        handle.className = 'ed-handle';
+        el.appendChild(handle);
+        el.addEventListener('pointerdown', (e) => onDown(e, slug, item));
+        items.push(item);
+      }
+      stage.addEventListener('pointerdown', (e) => {
+        if (editing && e.target === stage) deselect();
+      });
+      const gv = document.createElement('div');
+      gv.className = 'ed-guide ed-guide--v';
+      const gh = document.createElement('div');
+      gh.className = 'ed-guide ed-guide--h';
+      stage.append(gv, gh);
+      state[slug] = {
+        stage,
+        h: model.h,
+        cover: model.cover,
+        items,
+        gv,
+        gh,
+        naturalW: stage.getBoundingClientRect().width,
+      };
+      refreshCoverBadge(slug);
+    });
+
+    function refreshCoverBadge(slug: string) {
+      const st = state[slug];
+      st.items.forEach((it) => it.el.classList.toggle('ed-cover', it.img === st.cover));
+    }
+
+    /* ---- Overview (zoom-out) fit ---------------------------------------- */
+
+    function fitStage(slug: string) {
+      const st = state[slug];
+      if (!editing) {
+        st.stage.style.width = '';
+        return;
+      }
+      const avail = Math.max(window.innerHeight - 190, 320); // room for toolbar + panel
+      const fitW = (avail * CANVAS_W) / st.h;
+      st.stage.style.width = clamp(fitW, 300, st.naturalW) + 'px';
+    }
+
+    const fitAll = () => Object.keys(state).forEach(fitStage);
+    window.addEventListener('resize', () => editing && fitAll());
+
+    function applyItem(slug: string, it: Item) {
+      const st = state[slug];
+      const g = geom(it);
+      it.el.style.left = (it.x / CANVAS_W) * 100 + '%';
+      it.el.style.top = (it.y / st.h) * 100 + '%';
+      it.el.style.width = (it.w / CANVAS_W) * 100 + '%';
+      it.el.style.zIndex = String(it.z);
+
+      const frame = it.el.querySelector('.canvas__frame') as HTMLElement;
+      frame.style.aspectRatio = String(g.aspect);
+
+      const src = it.el.querySelector('.canvas__src') as HTMLElement;
+      src.style.left = g.src.left + '%';
+      src.style.top = g.src.top + '%';
+      src.style.width = g.src.width + '%';
+      src.style.height = g.src.height + '%';
+      src.style.transform = `rotate(${g.src.rot}deg)`;
+
+      const img = it.el.querySelector('img') as HTMLImageElement;
+      img.style.left = g.img.left + '%';
+      img.style.top = g.img.top + '%';
+      img.style.width = g.img.width + '%';
+      img.style.height = g.img.height + '%';
+    }
+
+    const applyStage = (slug: string) => {
+      state[slug].stage.style.aspectRatio = CANVAS_W + ' / ' + state[slug].h;
+    };
+    const applyAll = (slug: string) => state[slug].items.forEach((it) => applyItem(slug, it));
+
+    /** The canvas ends just below the last image — no trailing empty space. */
+    function tightenH(slug: string) {
+      const st = state[slug];
+      let bottom = 0;
+      for (const it of st.items) bottom = Math.max(bottom, it.y + itemH(it));
+      st.h = Math.max(Math.round(bottom + GAP), 200);
+      applyStage(slug);
+      applyAll(slug);
+    }
+
+    /** Extend the canvas while dragging past the bottom. */
+    function grow(slug: string, it: Item) {
+      const bottom = it.y + itemH(it);
+      if (bottom + GAP > state[slug].h) {
+        state[slug].h = Math.round(bottom + GAP);
+        applyStage(slug);
+        applyAll(slug);
+      }
+    }
+
+    /* ---- No-overlap: resolve on drop (insertion) ------------------------- */
+
+    const overlaps = (a: Item, b: Item) =>
+      a.x < b.x + b.w - EPS &&
+      a.x + a.w > b.x + EPS &&
+      a.y < b.y + itemH(b) - EPS &&
+      a.y + itemH(a) > b.y + EPS;
+
+    /**
+     * Make the layout overlap-free. The anchor (just-dropped image) keeps its
+     * place; everything else is swept top-to-bottom and pushed below whatever
+     * it overlaps — so dropping an image onto the top row inserts it there.
+     */
+    function resolveOverlaps(slug: string, anchor?: Item) {
+      const st = state[slug];
+      const byY = [...st.items].sort((a, b) => a.y - b.y || a.x - b.x);
+      const order = anchor ? [anchor, ...byY.filter((i) => i !== anchor)] : byY;
+      const placed: Item[] = [];
+      for (const it of order) {
+        let guard = 0;
+        let moved = true;
+        while (moved && guard++ < 200) {
+          moved = false;
+          for (const p of placed) {
+            if (overlaps(it, p)) {
+              it.y = p.y + itemH(p) + GAP;
+              moved = true;
+            }
+          }
+        }
+        placed.push(it);
+      }
+      tightenH(slug);
+      fitStage(slug);
+    }
+
+    /* ---- Snap guides ----------------------------------------------------- */
+
+    function snapTargets(slug: string, except: Item) {
+      const xs = [0, GAP, CANVAS_W / 2, CANVAS_W - GAP, CANVAS_W];
+      const ys = [0, GAP];
+      for (const o of state[slug].items) {
+        if (o === except) continue;
+        const oh = itemH(o);
+        xs.push(o.x, o.x + o.w, o.x + o.w / 2, o.x + o.w + GAP, o.x - GAP);
+        ys.push(o.y, o.y + oh, o.y + oh / 2, o.y + oh + GAP, o.y - GAP);
+      }
+      return { xs, ys };
+    }
+
+    function bestSnap(cands: number[], targets: number[]) {
+      let best: { delta: number; line: number } | null = null;
+      for (const c of cands) {
+        for (const t of targets) {
+          const d = t - c;
+          if (Math.abs(d) <= SNAP && (!best || Math.abs(d) < Math.abs(best.delta))) {
+            best = { delta: d, line: t };
+          }
+        }
+      }
+      return best;
+    }
+
+    function showGuides(slug: string, vx: number | null, hy: number | null) {
+      const st = state[slug];
+      st.gv.style.display = vx === null ? 'none' : 'block';
+      if (vx !== null) st.gv.style.left = (vx / CANVAS_W) * 100 + '%';
+      st.gh.style.display = hy === null ? 'none' : 'block';
+      if (hy !== null) st.gh.style.top = (hy / st.h) * 100 + '%';
+    }
+
+    const hideGuides = (slug: string) => showGuides(slug, null, null);
+
+    /* ---- Pointer interactions --------------------------------------------- */
+
+    function onDown(e: PointerEvent, slug: string, it: Item) {
+      if (!editing) return;
+      e.preventDefault();
+      select(slug, it);
+      const st = state[slug];
+      const perUnit = st.stage.getBoundingClientRect().width / CANVAS_W;
+      const sx = e.clientX;
+      const sy = e.clientY;
+      const orig = { x: it.x, y: it.y, w: it.w, fx: it.crop.fx, fy: it.crop.fy };
+      const isHandle = !!(e.target as HTMLElement).closest('.ed-handle');
+      const mode = isHandle ? 'resize' : panning ? 'pan' : 'move';
+      const targets = snapTargets(slug, it);
+      if (mode !== 'pan') it.el.classList.add('ed-lift');
+
+      const move = (ev: PointerEvent) => {
+        const dxu = (ev.clientX - sx) / perUnit;
+        const dyu = (ev.clientY - sy) / perUnit;
+        let vline: number | null = null;
+        let hline: number | null = null;
+
+        if (mode === 'move') {
+          let nx = clamp(orig.x + dxu, 0, CANVAS_W - it.w);
+          let ny = Math.max(0, orig.y + dyu);
+          const ih = itemH(it);
+          const sx2 = bestSnap([nx, nx + it.w, nx + it.w / 2], targets.xs);
+          if (sx2) {
+            nx = clamp(nx + sx2.delta, 0, CANVAS_W - it.w);
+            vline = sx2.line;
+          }
+          const sy2 = bestSnap([ny, ny + ih, ny + ih / 2], targets.ys);
+          if (sy2) {
+            ny = Math.max(0, ny + sy2.delta);
+            hline = sy2.line;
+          }
+          it.x = nx;
+          it.y = ny;
+        } else if (mode === 'resize') {
+          let nw = clamp(orig.w + dxu, 40, CANVAS_W);
+          const sw = bestSnap([it.x + nw], targets.xs);
+          if (sw) {
+            nw = clamp(nw + sw.delta, 40, CANVAS_W);
+            vline = sw.line;
+          }
+          it.w = Math.min(nw, CANVAS_W - it.x);
+        } else {
+          const r = it.el.getBoundingClientRect();
+          it.crop.fx = clamp(orig.fx - ((ev.clientX - sx) / r.width) * 100, 0, 100);
+          it.crop.fy = clamp(orig.fy - ((ev.clientY - sy) / r.height) * 100, 0, 100);
+        }
+        showGuides(slug, vline, hline);
+        applyItem(slug, it);
+        grow(slug, it);
+      };
+      const up = () => {
+        hideGuides(slug);
+        it.el.classList.remove('ed-lift');
+        if (mode !== 'pan') resolveOverlaps(slug, it); // insertion: others make room
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', up);
+      };
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+    }
+
+    /* ---- Selection & panel ------------------------------------------------ */
+
+    function select(slug: string, it: Item) {
+      if (sel && sel.item !== it) sel.item.el.classList.remove('ed-sel');
+      sel = { slug, item: it };
+      it.el.classList.add('ed-sel');
+      panel.hidden = false;
+      syncPanel(it);
+      panning = false;
+      panBtn.classList.remove('ed-active');
+    }
+
+    function deselect() {
+      if (sel) sel.item.el.classList.remove('ed-sel');
+      sel = null;
+      panel.hidden = true;
+      panning = false;
+      panBtn.classList.remove('ed-active');
+    }
+
+    /** Reflect the selected image's state in every control. */
+    function syncPanel(it: Item) {
+      zoomInput.value = String(it.crop.zoom);
+      panel.querySelectorAll<HTMLButtonElement>('[data-aspect]').forEach((b) => {
+        const v = b.dataset.aspect === 'free' ? null : parseFloat(b.dataset.aspect!);
+        const active =
+          v === null ? it.crop.aspect === null : Math.abs((it.crop.aspect ?? -9) - v) < 0.01;
+        b.classList.toggle('ed-active', active);
+      });
+      panel.querySelectorAll<HTMLButtonElement>('[data-w]').forEach((b) => {
+        b.classList.toggle('ed-active', Math.abs(it.w - parseFloat(b.dataset.w!)) < 2);
+      });
+      const tr = it.crop.trim ?? noTrim();
+      panel.querySelectorAll<HTMLInputElement>('[data-trim]').forEach((i) => {
+        const edge = i.dataset.trim as 't' | 'r' | 'b' | 'l';
+        i.value = String(Math.round((tr[edge] ?? 0) * 1000) / 10);
+      });
+      syncCover();
+    }
+
+    function syncCover() {
+      coverBtn.classList.toggle('ed-active', !!sel && state[sel.slug].cover === sel.item.img);
+    }
+
+    /** Apply a change to the selected image and reflow the canvas. */
+    function edit(fn: (it: Item) => void, reflow = true) {
+      if (!sel) return;
+      fn(sel.item);
+      applyItem(sel.slug, sel.item);
+      if (reflow) resolveOverlaps(sel.slug, sel.item);
+      syncPanel(sel.item);
+    }
+
+    /* ---- Add images & PDFs ------------------------------------------------ */
+
+    const slugifyName = (s: string) =>
+      s
+        .normalize('NFKD')
+        .replace(/[̀-ͯ]/g, '')
+        .toLowerCase()
+        .replace(/\.[a-z0-9]+$/, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '') || 'img';
+
+    const serializeItems = (st: Stage) =>
+      st.items.map((it) => {
+        const tr = it.crop.trim ?? noTrim();
+        const rot = normRot(it.crop.rot);
+        return {
+          img: it.img,
+          x: Math.round(it.x),
+          y: Math.round(it.y),
+          w: Math.round(it.w),
+          z: it.z,
+          crop: {
+            aspect: it.crop.aspect,
+            fx: Math.round(it.crop.fx),
+            fy: Math.round(it.crop.fy),
+            zoom: Math.round(it.crop.zoom * 100) / 100,
+            ...(rot ? { rot } : {}),
+            ...(hasTrim(tr)
+              ? {
+                  trim: {
+                    t: Math.round(tr.t * 1000) / 1000,
+                    r: Math.round(tr.r * 1000) / 1000,
+                    b: Math.round(tr.b * 1000) / 1000,
+                    l: Math.round(tr.l * 1000) / 1000,
+                  },
+                }
+              : {}),
+          },
+        };
+      });
+
+    type Upload = { stem: string; ext: string; dataUrl: string; w: number; h: number };
+
+    function readImage(file: File): Promise<Upload> {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('read error'));
+        reader.onload = () => {
+          const dataUrl = String(reader.result);
+          const img = new Image();
+          img.onerror = () => reject(new Error('bad image'));
+          img.onload = () =>
+            resolve({
+              stem: slugifyName(file.name),
+              ext: file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg',
+              dataUrl,
+              w: img.naturalWidth,
+              h: img.naturalHeight,
+            });
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    /** Render every page of a PDF to a web image (in-browser, via pdf.js). */
+    async function pdfToImages(file: File): Promise<Upload[]> {
+      status('Convertint PDF…');
+      const pdfjs = await import('pdfjs-dist');
+      // @ts-ignore — Vite's ?url import has no type declaration
+      const worker = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+      pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
+      const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+      const base = slugifyName(file.name);
+      const out: Upload[] = [];
+      for (let i = 1; i <= doc.numPages; i++) {
+        status(`Convertint PDF… pàgina ${i}/${doc.numPages}`);
+        const page = await doc.getPage(i);
+        const vp1 = page.getViewport({ scale: 1 });
+        const scale = Math.min(2400 / Math.max(vp1.width, vp1.height), 4);
+        const vp = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(vp.width);
+        canvas.height = Math.round(vp.height);
+        const ctx = canvas.getContext('2d')!;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport: vp }).promise;
+        out.push({
+          stem: doc.numPages > 1 ? `${base}-p${i}` : base,
+          ext: 'jpg',
+          dataUrl: canvas.toDataURL('image/jpeg', 0.82),
+          w: canvas.width,
+          h: canvas.height,
+        });
+      }
+      return out;
+    }
+
+    /** Upload one image and register it at the bottom of the canvas. */
+    async function uploadOne(slug: string, up: Upload) {
+      const st = state[slug];
+      const na = up.w / up.h;
+      const item = {
+        x: GAP,
+        y: Math.round(st.h),
+        w: NEW_W,
+        z: Math.max(0, ...st.items.map((i) => i.z)) + 1,
+        crop: { aspect: null, fx: 50, fy: 50, zoom: 1 },
+      };
+      const newH = Math.round(item.y + NEW_W / na + GAP);
+      const r = await fetch('/__editor/upload', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          slug,
+          stem: up.stem,
+          ext: up.ext,
+          data: up.dataUrl.split(',')[1],
+          canvas: {
+            h: newH,
+            ...(st.cover ? { cover: st.cover } : {}),
+            items: serializeItems(st),
+          },
+          item,
+        }),
+      });
+      const resp = await r.json();
+      if (!r.ok || !resp.ok) throw new Error(resp.error || 'upload failed');
+      // Track locally so the next upload in this batch stacks below this one.
+      st.items.push({ ...item, img: resp.name, na, el: document.createElement('div') } as Item);
+      st.h = newH;
+    }
+
+    addBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async () => {
+      const files = Array.from(fileInput.files ?? []);
+      fileInput.value = '';
+      if (!files.length) return;
+      const slug = Object.keys(state)[0];
+      if (!slug) return;
+      addBtn.disabled = true;
+      try {
+        for (const f of files) {
+          const isPdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+          const uploads = isPdf ? await pdfToImages(f) : [await readImage(f)];
+          for (const up of uploads) {
+            status('Pujant ' + up.stem + '…');
+            await uploadOne(slug, up);
+          }
+        }
+        status('Afegit ✓ — recarregant…');
+        setTimeout(() => location.reload(), 300);
+      } catch (err) {
+        status('Error afegint: ' + err);
+        addBtn.disabled = false;
+      }
+    });
+
+    /* ---- Toolbar / panel wiring -------------------------------------------- */
+
+    toggleBtn.addEventListener('click', () => setEditing(!editing));
+    saveBtn.addEventListener('click', save);
+
+    panel.querySelectorAll<HTMLButtonElement>('[data-aspect]').forEach((b) => {
+      b.addEventListener('click', () =>
+        edit((it) => {
+          it.crop.aspect = b.dataset.aspect === 'free' ? null : parseFloat(b.dataset.aspect!);
+        }),
+      );
+    });
+
+    panel.querySelectorAll<HTMLButtonElement>('[data-w]').forEach((b) => {
+      b.addEventListener('click', () =>
+        edit((it) => {
+          it.w = clamp(parseFloat(b.dataset.w!), 40, CANVAS_W);
+          it.x = Math.min(it.x, CANVAS_W - it.w);
+        }),
+      );
+    });
+
+    (panel.querySelector('[data-ed="rot-l"]') as HTMLButtonElement).addEventListener('click', () =>
+      edit((it) => (it.crop.rot = normRot((it.crop.rot ?? 0) - 90))),
+    );
+    (panel.querySelector('[data-ed="rot-r"]') as HTMLButtonElement).addEventListener('click', () =>
+      edit((it) => (it.crop.rot = normRot((it.crop.rot ?? 0) + 90))),
+    );
+
+    zoomInput.addEventListener('input', () => edit((it) => (it.crop.zoom = parseFloat(zoomInput.value)), false));
+
+    // Trim: live preview while dragging, reflow once the slider is released.
+    panel.querySelectorAll<HTMLInputElement>('[data-trim]').forEach((i) => {
+      const edge = i.dataset.trim as 't' | 'r' | 'b' | 'l';
+      const set = (reflow: boolean) =>
+        edit((it) => {
+          it.crop.trim = { ...noTrim(), ...it.crop.trim };
+          it.crop.trim[edge] = parseFloat(i.value) / 100;
+        }, reflow);
+      i.addEventListener('input', () => set(false));
+      i.addEventListener('change', () => set(true));
+    });
+    (panel.querySelector('[data-ed="trim-reset"]') as HTMLButtonElement).addEventListener('click', () =>
+      edit((it) => (it.crop.trim = noTrim())),
+    );
+
+    (panel.querySelector('[data-ed="reset"]') as HTMLButtonElement).addEventListener('click', () =>
+      edit((it) => (it.crop = defaultCrop())),
+    );
+
+    panBtn.addEventListener('click', () => {
+      panning = !panning;
+      panBtn.classList.toggle('ed-active', panning);
+      status(panning ? 'Reenquadrar: arrossega dins la imatge per moure-la dins el marc.' : '');
+    });
+
+    coverBtn.addEventListener('click', () => {
+      if (!sel) return;
+      const st = state[sel.slug];
+      st.cover = st.cover === sel.item.img ? null : sel.item.img;
+      refreshCoverBadge(sel.slug);
+      syncCover();
+      status(st.cover ? 'Portada: ' + st.cover : 'Sense portada (es farà servir la primera imatge)');
+    });
+
+    deleteBtn.addEventListener('click', () => {
+      if (!sel) return;
+      const { slug, item } = sel;
+      const st = state[slug];
+      st.items = st.items.filter((i) => i !== item);
+      if (st.cover === item.img) st.cover = null;
+      item.el.remove();
+      deselect();
+      resolveOverlaps(slug);
+      status(
+        st.items.length
+          ? 'Imatge eliminada del llenç — recorda Desar. (El fitxer es conserva a la carpeta del projecte.)'
+          : 'Llenç buit: en desar es restaurarà la disposició per defecte.',
+      );
+    });
+
+    // Arrow keys nudge the selected image (Shift = big steps). Esc deselects.
+    document.addEventListener('keydown', (e) => {
+      if (!editing || !sel) return;
+      const a = document.activeElement;
+      if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return;
+      if (e.key === 'Escape') {
+        deselect();
+        return;
+      }
+      if (!e.key.startsWith('Arrow')) return;
+      e.preventDefault();
+      const step = e.shiftKey ? 10 : 2;
+      edit((it) => {
+        if (e.key === 'ArrowLeft') it.x = clamp(it.x - step, 0, CANVAS_W - it.w);
+        if (e.key === 'ArrowRight') it.x = clamp(it.x + step, 0, CANVAS_W - it.w);
+        if (e.key === 'ArrowUp') it.y = Math.max(0, it.y - step);
+        if (e.key === 'ArrowDown') it.y = it.y + step;
+      });
+    });
+
+    function setEditing(on: boolean) {
+      editing = on;
+      document.body.classList.toggle('ed-on', on);
+      toggleBtn.textContent = on ? 'Sortir de l’edició' : 'Editar disposició';
+      saveBtn.hidden = !on;
+      addBtn.hidden = !on;
+      if (!on) deselect();
+      if (on) Object.keys(state).forEach(tightenH); // hug the last image
+      fitAll();
+      if (on) {
+        const first = Object.values(state)[0];
+        first?.stage.scrollIntoView({ block: 'start', behavior: 'auto' });
+        status('Vista general — arrossega lliurement; en deixar anar, les altres fan lloc.');
+      } else {
+        status('');
+      }
+    }
+
+    async function save() {
+      const payload: Record<string, unknown> = {};
+      for (const slug in state) {
+        const st = state[slug];
+        payload[slug] = {
+          h: Math.round(st.h),
+          ...(st.cover ? { cover: st.cover } : {}),
+          items: serializeItems(st),
+        };
+      }
+      status('Desant…');
+      try {
+        const r = await fetch('/__editor/save', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (r.ok) {
+          status('Desat ✓');
+          setTimeout(() => location.reload(), 400);
+        } else {
+          status('Error en desar (' + r.status + ')');
+        }
+      } catch (err) {
+        status('Error: ' + err);
+      }
+    }
+  } else {
+    // Not local: remove the editor chrome entirely.
+    document.querySelector('.ed-bar')?.remove();
+    document.querySelector('.ed-panel')?.remove();
+  }
+</script>

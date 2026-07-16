@@ -1,0 +1,20 @@
+---
+/**
+ * Minimal footer: © year + name, in the smallest quiet type.
+ */
+import { site } from '../data/site';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="ft container">
+  <p>© {year} {site.name}</p>
+</footer>
+
+<style>
+  .ft {
+    padding-block: 4rem 1.6rem;
+    font-size: var(--fs-xs);
+    color: var(--grey);
+  }
+</style>

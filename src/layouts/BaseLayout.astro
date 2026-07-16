@@ -1,0 +1,72 @@
+---
+/**
+ * Document shell: <head> metadata (SEO, per-page hreflang, Open Graph), global
+ * styles, fonts and the skip link. Visible content is passed in as a slot.
+ */
+import '@fontsource-variable/archivo';
+import '../styles/global.css';
+
+import { languages, t, type Lang } from '../i18n/ui';
+import { localePath } from '../i18n/utils';
+import { site } from '../data/site';
+
+interface Props {
+  lang: Lang;
+  /** Locale-relative path of this page ('' | 'info/' | 'projects/<slug>/'). */
+  path?: string;
+  title?: string;
+  description?: string;
+}
+
+const { lang, path = '', title, description } = Astro.props;
+
+const pageTitle = title ?? `${site.name} — ${site.role[lang]}`;
+const pageDescription = description ?? t(lang, 'meta_description');
+
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogLocale: Record<Lang, string> = { en: 'en_US', ca: 'ca_ES', es: 'es_ES' };
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- The same page in the other languages. -->
+    {
+      languages.map((l) => (
+        <link rel="alternate" hreflang={l} href={new URL(localePath(l, path), Astro.site)} />
+      ))
+    }
+    <link rel="alternate" hreflang="x-default" href={new URL(localePath('en', path), Astro.site)} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={ogLocale[lang]} />
+    {
+      languages
+        .filter((l) => l !== lang)
+        .map((l) => <meta property="og:locale:alternate" content={ogLocale[l]} />)
+    }
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">{t(lang, 'skip')}</a>
+    <slot />
+  </body>
+</html>

@@ -1,0 +1,99 @@
+---
+/**
+ * A project's own page, in the manner of the reference sites: small title, a
+ * labelled fact sheet ("fitxa tècnica"), the concept text, then the long
+ * free-canvas sequence of images. The layout editor loads here in dev.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from './SiteHeader.astro';
+import SiteFooter from './SiteFooter.astro';
+import ProjectCanvas from './ProjectCanvas.astro';
+import CanvasEditor from './CanvasEditor.astro';
+import { t, type Lang } from '../i18n/ui';
+import { site } from '../data/site';
+import type { Project } from '../data/projects';
+
+interface Props {
+  project: Project;
+  lang: Lang;
+}
+
+const { project, lang } = Astro.props;
+const path = `projects/${project.slug}/`;
+
+const fitxa = [
+  { label: t(lang, 'fitxa_program'), value: project.type[lang] },
+  { label: t(lang, 'fitxa_location'), value: project.location[lang] },
+  { label: t(lang, 'fitxa_year'), value: project.year },
+  { label: t(lang, 'fitxa_studio'), value: project.studio?.[lang] ?? '' },
+].filter((f) => f.value);
+---
+
+<BaseLayout lang={lang} path={path} title={`${site.name} — ${project.title[lang]}`}>
+  <SiteHeader lang={lang} path={path} active="work" />
+
+  <main id="main">
+    <div class="container">
+      <header class="pj">
+        <h1 class="pj__title">{project.title[lang]}</h1>
+
+        {
+          fitxa.length > 0 && (
+            <dl class="pj__fitxa">
+              {fitxa.map((f) => (
+                <div class="pj__row">
+                  <dt>{f.label}:</dt>
+                  <dd>{f.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )
+        }
+
+        {project.concept[lang] && <p class="pj__concept">{project.concept[lang]}</p>}
+      </header>
+
+      <ProjectCanvas slug={project.slug} title={project.title[lang]} />
+    </div>
+  </main>
+
+  <SiteFooter />
+
+  {import.meta.env.DEV && <CanvasEditor />}
+</BaseLayout>
+
+<style>
+  .pj {
+    max-width: var(--measure);
+    margin-bottom: 3rem;
+  }
+
+  .pj__title {
+    font-size: var(--fs-l);
+    font-weight: 500;
+    margin-bottom: 1.1rem;
+  }
+
+  .pj__fitxa {
+    font-size: var(--fs-s);
+    margin-bottom: 1.4rem;
+  }
+
+  .pj__row {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .pj__row dt {
+    color: var(--grey);
+  }
+
+  .pj__row dd {
+    margin: 0;
+  }
+
+  .pj__concept {
+    font-size: var(--fs-m);
+    color: var(--ink-soft);
+  }
+</style>

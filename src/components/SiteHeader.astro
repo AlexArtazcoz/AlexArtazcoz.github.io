@@ -1,0 +1,73 @@
+---
+/**
+ * Minimal header in the manner of the reference sites: the name set small in
+ * caps on the left; "work / info" and the language switch on the right.
+ * Static (not sticky) — the references let the page scroll clean.
+ */
+import { t, type Lang } from '../i18n/ui';
+import { localePath } from '../i18n/utils';
+import { site } from '../data/site';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+
+interface Props {
+  lang: Lang;
+  /** Locale-relative path of the current page (for the language switch). */
+  path?: string;
+  /** Which nav item is current: 'work' | 'info' | none. */
+  active?: 'work' | 'info';
+}
+
+const { lang, path = '', active } = Astro.props;
+---
+
+<header class="hd container">
+  <a class="hd__name" href={localePath(lang, '')}>{site.name}</a>
+
+  <nav class="hd__nav" aria-label="Site">
+    <a href={localePath(lang, '')} aria-current={active === 'work' ? 'page' : undefined}>
+      {t(lang, 'nav_work')}
+    </a>
+    <a href={localePath(lang, 'info/')} aria-current={active === 'info' ? 'page' : undefined}>
+      {t(lang, 'nav_info')}
+    </a>
+  </nav>
+
+  <LanguageSwitcher lang={lang} path={path} />
+</header>
+
+<style>
+  .hd {
+    display: flex;
+    align-items: baseline;
+    gap: 1.25rem 2rem;
+    flex-wrap: wrap;
+    padding-block: 1.4rem 2.8rem;
+  }
+
+  .hd__name {
+    font-size: var(--fs-s);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .hd__nav {
+    display: flex;
+    gap: 1.25rem;
+    font-size: var(--fs-s);
+    margin-inline-end: auto;
+  }
+
+  .hd__nav a {
+    color: var(--grey);
+  }
+
+  .hd__nav a:hover {
+    color: var(--ink);
+    opacity: 1;
+  }
+
+  .hd__nav a[aria-current='page'] {
+    color: var(--ink);
+  }
+</style>

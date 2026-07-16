@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Portfolio mark">
+  <g fill="none" stroke-linecap="square">
+    <rect x="4.5" y="4.5" width="23" height="23" stroke-width="1.5" />
+    <line x1="16" y1="4.5" x2="16" y2="27.5" stroke-width="1.5" />
+    <line x1="4.5" y1="20" x2="27.5" y2="20" stroke-width="1" />
+  </g>
+  <style>
+    g { stroke: #141414; }
+    @media (prefers-color-scheme: dark) {
+      g { stroke: #fff; }
+    }
+  </style>
+</svg>

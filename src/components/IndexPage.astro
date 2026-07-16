@@ -1,0 +1,128 @@
+---
+/**
+ * The homepage IS the project index (as on the reference sites): a quiet
+ * 3-column grid of thumbnails with the title and a grey meta line below each.
+ */
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from './SiteHeader.astro';
+import SiteFooter from './SiteFooter.astro';
+import { projects } from '../data/projects';
+import { canvasFor } from '../data/layout';
+import { findImage } from '../data/assets';
+import type { Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+/**
+ * Cover image for a project, in priority order: the one chosen in the layout
+ * editor (★ Portada), then `project.cover`, then the canvas's first image.
+ */
+function coverOf(slug: string, coverName?: string) {
+  const canvas = canvasFor(slug);
+  const name = canvas.cover ?? coverName ?? canvas.items[0]?.img;
+  return name ? findImage(slug, name) : undefined;
+}
+
+const cards = projects.map((p) => ({ p, cover: coverOf(p.slug, p.cover) }));
+---
+
+<BaseLayout lang={lang} path="">
+  <SiteHeader lang={lang} path="" active="work" />
+
+  <main id="main" class="container">
+    <ul class="grid">
+      {
+        cards.map(({ p, cover }) => (
+          <li>
+            <a class="card" href={`${lang === 'en' ? '' : `/${lang}`}/projects/${p.slug}/`}>
+              <span class="card__frame">
+                {cover && (
+                  <Image
+                    src={cover.src}
+                    alt={p.title[lang]}
+                    widths={[400, 700, 1000].filter((w) => w <= cover.src.width)}
+                    sizes="(min-width: 60rem) 30vw, (min-width: 40rem) 45vw, 100vw"
+                    loading="lazy"
+                  />
+                )}
+              </span>
+              <span class="card__title">{p.title[lang]}</span>
+              <span class="card__meta">
+                {[p.type[lang], p.year].filter(Boolean).join(', ')}
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </main>
+
+  <SiteFooter />
+</BaseLayout>
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3rem 2.6rem;
+  }
+
+  @media (min-width: 40rem) {
+    .grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (min-width: 60rem) {
+    .grid {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+  }
+
+  .card {
+    display: block;
+  }
+
+  .card:hover {
+    opacity: 1;
+  }
+
+  .card__frame {
+    display: block;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    background: #f4f4f2;
+  }
+
+  /* Covers sit in black & white so the index reads as one balanced set;
+     colour returns on hover. */
+  .card__frame :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(1);
+    transition: filter 0.25s ease;
+  }
+
+  .card:hover .card__frame :global(img) {
+    filter: grayscale(0);
+  }
+
+  .card__title {
+    display: block;
+    margin-top: 0.55rem;
+    font-size: var(--fs-s);
+    color: var(--ink);
+  }
+
+  .card__meta {
+    display: block;
+    font-size: var(--fs-s);
+    color: var(--grey);
+  }
+</style>

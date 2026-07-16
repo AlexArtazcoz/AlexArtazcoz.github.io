@@ -1,0 +1,121 @@
+---
+/**
+ * The "info" page (as on the reference sites): a single narrow column with the
+ * bio, education, skills and contact — all in the same quiet type.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from './SiteHeader.astro';
+import SiteFooter from './SiteFooter.astro';
+import { t, type Lang } from '../i18n/ui';
+import { site, bio, education, skills } from '../data/site';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+---
+
+<BaseLayout lang={lang} path="info/" title={`${site.name} — info`}>
+  <SiteHeader lang={lang} path="info/" active="info" />
+
+  <main id="main" class="container">
+    <div class="info">
+      <section class="info__bio">
+        {bio[lang].map((paragraph) => <p>{paragraph}</p>)}
+      </section>
+
+      <section>
+        <h2 class="info__label">{t(lang, 'info_education')}</h2>
+        <ul class="info__list">
+          {
+            education.map((item) => (
+              <li>
+                <span class="info__grey">{item.period}</span> — {item.degree[lang]},{' '}
+                {item.org}
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="info__label">{t(lang, 'info_skills')}</h2>
+        <ul class="info__list">
+          {
+            skills.map((group) => (
+              <li>
+                <span class="info__grey">{group.group[lang]}</span> —{' '}
+                {group.items.join(', ')}
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="info__label">{t(lang, 'info_contact')}</h2>
+        <ul class="info__list">
+          <li>
+            <a class="info__link" href={`mailto:${site.email}`}>{site.email}</a>
+          </li>
+          <li>
+            <a class="info__link" href={site.cvPath} download>{t(lang, 'info_cv')}</a>
+          </li>
+          {
+            site.socials.map((s) => (
+              <li>
+                <a class="info__link" href={s.href} target="_blank" rel="noopener noreferrer">
+                  {s.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <SiteFooter />
+</BaseLayout>
+
+<style>
+  .info {
+    max-width: var(--measure);
+    display: grid;
+    gap: 2.4rem;
+    font-size: var(--fs-m);
+  }
+
+  .info__bio {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .info__label {
+    font-size: var(--fs-s);
+    color: var(--grey);
+    font-weight: 400;
+    margin-bottom: 0.5rem;
+  }
+
+  .info__list {
+    display: grid;
+    gap: 0.3rem;
+    font-size: var(--fs-s);
+  }
+
+  .info__grey {
+    color: var(--grey);
+  }
+
+  .info__link {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--line);
+  }
+
+  .info__link:hover {
+    text-decoration-color: var(--ink);
+  }
+</style>

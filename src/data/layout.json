@@ -1,0 +1,375 @@
+{
+  "tap-iii": {
+    "h": 2874,
+    "cover": "03-img",
+    "items": [
+      {
+        "img": "01-img",
+        "x": 511,
+        "y": 12,
+        "w": 467,
+        "z": 1,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "02-img",
+        "x": 23,
+        "y": 1396,
+        "w": 956,
+        "z": 2,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "03-img",
+        "x": 22,
+        "y": 657,
+        "w": 956,
+        "z": 3,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "04-img",
+        "x": 22,
+        "y": 2135,
+        "w": 956,
+        "z": 4,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "05-img",
+        "x": 22,
+        "y": 12,
+        "w": 467,
+        "z": 5,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      }
+    ]
+  },
+  "rap": {
+    "h": 3460,
+    "cover": "05-img",
+    "items": [
+      {
+        "img": "01-descomposicio",
+        "x": 22,
+        "y": 0,
+        "w": 956,
+        "z": 1,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "02-recomposicio",
+        "x": 22,
+        "y": 691,
+        "w": 956,
+        "z": 2,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "03-cartell",
+        "x": 22,
+        "y": 1415,
+        "w": 630,
+        "z": 3,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "04-novelagrafica",
+        "x": 674,
+        "y": 1427,
+        "w": 304,
+        "z": 4,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "05-img",
+        "x": 22,
+        "y": 2328,
+        "w": 956,
+        "z": 5,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1,
+          "rot": 270,
+          "trim": {
+            "t": 0.04,
+            "r": 0.015,
+            "b": 0,
+            "l": 0.005
+          }
+        }
+      },
+      {
+        "img": "06-img-p1",
+        "x": 22,
+        "y": 3008,
+        "w": 304,
+        "z": 6,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "06-img-p2",
+        "x": 348,
+        "y": 3008,
+        "w": 304,
+        "z": 7,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "06-img-p3",
+        "x": 674,
+        "y": 3008,
+        "w": 304,
+        "z": 8,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      }
+    ]
+  },
+  "tap-v": {
+    "h": 4353,
+    "cover": "08-tap5-secciodetallestrategic",
+    "items": [
+      {
+        "img": "02-a1-espaiemocional-1",
+        "x": 17,
+        "y": 2,
+        "w": 966,
+        "z": 2,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "03-calibrar-seccionslongitudinals-s-16-30",
+        "x": 13,
+        "y": 2912,
+        "w": 973,
+        "z": 3,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1,
+          "trim": {
+            "t": 0.015,
+            "r": 0.025,
+            "b": 0.015,
+            "l": 0.005
+          }
+        }
+      },
+      {
+        "img": "04-planta-unitat-3",
+        "x": 0,
+        "y": 1420,
+        "w": 1000,
+        "z": 4,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1,
+          "trim": {
+            "t": 0,
+            "r": 0,
+            "b": 0,
+            "l": 0.015
+          }
+        }
+      },
+      {
+        "img": "05-planta-general-16-25",
+        "x": 4,
+        "y": 3630,
+        "w": 992,
+        "z": 5,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "06-t2b-seccio-espai-emocional-p2",
+        "x": 8,
+        "y": 706,
+        "w": 496,
+        "z": 7,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "07-tap5-secciodetallunitat",
+        "x": 517,
+        "y": 706,
+        "w": 473,
+        "z": 9,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "08-tap5-secciodetallestrategic",
+        "x": 13,
+        "y": 2195,
+        "w": 983,
+        "z": 10,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      }
+    ]
+  },
+  "tap-vi": {
+    "h": 4860,
+    "items": [
+      {
+        "img": "01-l0-1",
+        "x": 22,
+        "y": 22,
+        "w": 956,
+        "z": 1,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "02-l2",
+        "x": 22,
+        "y": 382,
+        "w": 956,
+        "z": 2,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1,
+          "trim": {
+            "t": 0.125,
+            "r": 0,
+            "b": 0.1,
+            "l": 0
+          }
+        }
+      },
+      {
+        "img": "03-l3",
+        "x": 22,
+        "y": 1080,
+        "w": 956,
+        "z": 3,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "04-l4",
+        "x": 22,
+        "y": 1777,
+        "w": 956,
+        "z": 4,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "05-jpg",
+        "x": 22,
+        "y": 2475,
+        "w": 956,
+        "z": 5,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      }
+    ]
+  }
+}

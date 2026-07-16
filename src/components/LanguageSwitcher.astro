@@ -1,0 +1,53 @@
+---
+/**
+ * CAT ENG ESP switch (harquitectes-style). Links go to the same page in each
+ * language, so switching never loses your place.
+ */
+import { languages, localeName, localeShort, t, type Lang } from '../i18n/ui';
+import { localePath } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  /** Locale-relative path of the current page. */
+  path?: string;
+}
+
+const { lang, path = '' } = Astro.props;
+---
+
+<nav class="langs" aria-label={t(lang, 'lang_label')}>
+  {
+    languages.map((l) => (
+      <a
+        href={localePath(l, path)}
+        hreflang={l}
+        lang={l}
+        aria-label={localeName[l]}
+        aria-current={l === lang ? 'true' : undefined}
+      >
+        {localeShort[l]}
+      </a>
+    ))
+  }
+</nav>
+
+<style>
+  .langs {
+    display: flex;
+    gap: 0.75rem;
+    font-size: var(--fs-s);
+  }
+
+  .langs a {
+    color: var(--grey);
+  }
+
+  .langs a:hover {
+    color: var(--ink);
+    opacity: 1;
+  }
+
+  .langs a[aria-current='true'] {
+    color: var(--ink);
+  }
+</style>
