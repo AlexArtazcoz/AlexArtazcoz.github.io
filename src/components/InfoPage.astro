@@ -59,9 +59,15 @@ const { lang } = Astro.props;
           <li>
             <a class="info__link" href={`mailto:${site.email}`}>{site.email}</a>
           </li>
-          <li>
-            <a class="info__link" href={site.cvPath} download>{t(lang, 'info_cv')}</a>
-          </li>
+          {
+            site.cvPath && (
+              <li>
+                <a class="info__link" href={site.cvPath} download>
+                  {t(lang, 'info_cv')}
+                </a>
+              </li>
+            )
+          }
           {
             site.socials.map((s) => (
               <li>

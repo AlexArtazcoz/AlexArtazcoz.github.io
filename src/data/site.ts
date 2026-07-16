@@ -38,16 +38,12 @@ export const site = {
   location: 'Barcelona, Spain',
 
   /** Used for the contact link (mailto:). */
-  email: 'hello@example.com',
+  email: 'artazcoz.arch@gmail.com',
 
-  /** Put your CV at `public/cv.pdf`, or change this path. */
-  cvPath: '/cv.pdf',
+  /** Put your CV at `public/cv.pdf`. Empty = the link is not shown yet. */
+  cvPath: '',
 
-  socials: [
-    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/your-handle' },
-    { label: 'Issuu', href: 'https://issuu.com/your-handle' },
-    { label: 'Instagram', href: 'https://www.instagram.com/your-handle' },
-  ] satisfies SocialLink[],
+  socials: [] satisfies SocialLink[],
 };
 
 /** Short bio paragraphs shown in the About section, per language. */
@@ -68,33 +64,20 @@ export const bio: Record<Lang, string[]> = {
 
 export const education: EducationItem[] = [
   {
-    period: '2021 — 2026',
+    period: '2023',
     degree: {
-      en: 'BArch + MArch in Architecture',
-      ca: 'Grau + Màster en Arquitectura',
-      es: 'Grado + Máster en Arquitectura',
+      en: 'Degree in Architecture Studies',
+      ca: 'Grau en Estudis d’Arquitectura',
+      es: 'Grado en Estudios de Arquitectura',
     },
-    org: 'ETSAB — UPC, Barcelona',
-  },
-  {
-    period: '2024',
-    degree: {
-      en: 'Erasmus exchange semester',
-      ca: 'Semestre d’intercanvi Erasmus',
-      es: 'Semestre de intercambio Erasmus',
-    },
-    org: 'TU Delft, Netherlands',
+    org: 'ETSAV — UPC, Sant Cugat del Vallès',
   },
 ];
 
 export const skills: SkillGroup[] = [
   {
     group: { en: 'Modeling & CAD', ca: 'Modelatge i CAD', es: 'Modelado y CAD' },
-    items: ['Rhinoceros', 'AutoCAD', 'Revit', 'SketchUp', 'ArchiCAD'],
-  },
-  {
-    group: { en: 'Visualization', ca: 'Visualització', es: 'Visualización' },
-    items: ['V-Ray', 'Enscape', 'Twinmotion'],
+    items: ['Rhinoceros', 'AutoCAD', 'Revit'],
   },
   {
     group: {
@@ -102,7 +85,7 @@ export const skills: SkillGroup[] = [
       ca: 'Gràfics i maquetació',
       es: 'Gráficos y maquetación',
     },
-    items: ['Illustrator', 'Photoshop', 'InDesign'],
+    items: ['Illustrator', 'Photoshop', 'InDesign', 'Affinity'],
   },
   {
     group: {
@@ -111,5 +94,9 @@ export const skills: SkillGroup[] = [
       es: 'Computacional y SIG',
     },
     items: ['Grasshopper', 'QGIS', 'Python'],
+  },
+  {
+    group: { en: 'AI', ca: 'IA', es: 'IA' },
+    items: ['Expertise in Claude Code and AI-driven workflows'],
   },
 ];
