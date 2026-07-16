@@ -20,8 +20,14 @@ export const assets: Record<string, Img[]> = {
   'tap-v': loadDir(
     import.meta.glob('../assets/tap-v/*.{jpg,jpeg,png,webp}', { eager: true, import: 'default' }) as Record<string, ImageMetadata>,
   ),
+  'tap-iv': loadDir(
+    import.meta.glob('../assets/tap-iv/*.{jpg,jpeg,png,webp}', { eager: true, import: 'default' }) as Record<string, ImageMetadata>,
+  ),
   'tap-iii': loadDir(
     import.meta.glob('../assets/tap-iii/*.{jpg,jpeg,png,webp}', { eager: true, import: 'default' }) as Record<string, ImageMetadata>,
+  ),
+  'tap-i': loadDir(
+    import.meta.glob('../assets/tap-i/*.{jpg,jpeg,png,webp}', { eager: true, import: 'default' }) as Record<string, ImageMetadata>,
   ),
   rap: loadDir(
     import.meta.glob('../assets/rap/*.{jpg,jpeg,png,webp}', { eager: true, import: 'default' }) as Record<string, ImageMetadata>,
