@@ -371,5 +371,413 @@
         }
       }
     ]
+  },
+  "balaguer": {
+    "h": 33466,
+    "items": [
+      {
+        "img": "01-orto-balaguer",
+        "x": 22,
+        "y": 10,
+        "w": 956,
+        "z": 1,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "02-nolli",
+        "x": 0,
+        "y": 1397,
+        "w": 304,
+        "z": 2,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "03-equipaments",
+        "x": 348,
+        "y": 1397,
+        "w": 304,
+        "z": 3,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "04-verd",
+        "x": 696,
+        "y": 1397,
+        "w": 304,
+        "z": 4,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "05-plantes-baixes",
+        "x": 185,
+        "y": 2293,
+        "w": 630,
+        "z": 5,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "06-any-construccio",
+        "x": 0,
+        "y": 11688,
+        "w": 304,
+        "z": 6,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "07-nombre-plantes",
+        "x": 348,
+        "y": 11688,
+        "w": 304,
+        "z": 7,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "08-habitatges-parcella",
+        "x": 22,
+        "y": 15043,
+        "w": 956,
+        "z": 8,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "09-estat-edificis",
+        "x": 22,
+        "y": 16417,
+        "w": 956,
+        "z": 9,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "10-foto-major",
+        "x": 22,
+        "y": 17791,
+        "w": 956,
+        "z": 10,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "11-foto-torrent",
+        "x": 22,
+        "y": 18144,
+        "w": 956,
+        "z": 11,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "12-foto-quadres",
+        "x": 22,
+        "y": 18497,
+        "w": 956,
+        "z": 12,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "13-planols-p01",
+        "x": 22,
+        "y": 18850,
+        "w": 956,
+        "z": 13,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "13-planols-p02",
+        "x": 22,
+        "y": 19548,
+        "w": 956,
+        "z": 14,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "13-planols-p03",
+        "x": 22,
+        "y": 20246,
+        "w": 956,
+        "z": 15,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "13-planols-p04",
+        "x": 22,
+        "y": 20944,
+        "w": 956,
+        "z": 16,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "13-planols-p05",
+        "x": 22,
+        "y": 21642,
+        "w": 956,
+        "z": 17,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "13-planols-p06",
+        "x": 22,
+        "y": 22340,
+        "w": 956,
+        "z": 18,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "13-planols-p07",
+        "x": 22,
+        "y": 23038,
+        "w": 956,
+        "z": 19,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "13-planols-p08",
+        "x": 22,
+        "y": 23736,
+        "w": 956,
+        "z": 20,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "13-planols-p09",
+        "x": 22,
+        "y": 24434,
+        "w": 956,
+        "z": 21,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "13-planols-p10",
+        "x": 22,
+        "y": 25132,
+        "w": 956,
+        "z": 22,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "14-general-balaguer",
+        "x": 22,
+        "y": 25830,
+        "w": 956,
+        "z": 23,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "15-general-berga",
+        "x": 22,
+        "y": 26528,
+        "w": 956,
+        "z": 24,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "16-general-ripoll",
+        "x": 22,
+        "y": 27226,
+        "w": 956,
+        "z": 25,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "17-general-tortosa",
+        "x": 22,
+        "y": 27925,
+        "w": 956,
+        "z": 26,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "18-general-valls",
+        "x": 22,
+        "y": 28623,
+        "w": 956,
+        "z": 27,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "19-orto-berga",
+        "x": 22,
+        "y": 29321,
+        "w": 956,
+        "z": 28,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "20-orto-ripoll",
+        "x": 22,
+        "y": 30019,
+        "w": 956,
+        "z": 29,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "21-orto-tortosa",
+        "x": 22,
+        "y": 31394,
+        "w": 956,
+        "z": 30,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "22-orto-valls",
+        "x": 22,
+        "y": 32769,
+        "w": 956,
+        "z": 31,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      }
+    ]
   }
 }
