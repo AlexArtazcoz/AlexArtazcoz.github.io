@@ -26,6 +26,9 @@ export const assets: Record<string, Img[]> = {
   rap: loadDir(
     import.meta.glob('../assets/rap/*.{jpg,jpeg,png,webp}', { eager: true, import: 'default' }) as Record<string, ImageMetadata>,
   ),
+  balaguer: loadDir(
+    import.meta.glob('../assets/balaguer/*.{jpg,jpeg,png,webp}', { eager: true, import: 'default' }) as Record<string, ImageMetadata>,
+  ),
 };
 
 export const imagesFor = (slug: string): Img[] => assets[slug] ?? [];

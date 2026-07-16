@@ -55,6 +55,18 @@ export const projects: Project[] = [
     concept: soon,
   },
   {
+    slug: 'balaguer',
+    title: { en: 'Balaguer', ca: 'Balaguer', es: 'Balaguer' },
+    year: '',
+    type: { en: 'Urban analysis', ca: 'Anàlisi urbana', es: 'Análisis urbano' },
+    location: {
+      en: 'Balaguer, Catalonia',
+      ca: 'Balaguer, Catalunya',
+      es: 'Balaguer, Cataluña',
+    },
+    concept: soon,
+  },
+  {
     slug: 'rap',
     title: { en: 'RAP', ca: 'RAP', es: 'RAP' },
     year: '',
