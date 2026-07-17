@@ -86,8 +86,8 @@ const { lang } = Astro.props;
 
   .pv__bar {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: calc(1rem + env(safe-area-inset-top, 0px));
+    right: calc(1rem + env(safe-area-inset-right, 0px));
     display: flex;
     gap: 0.4rem;
     z-index: 2;
@@ -109,6 +109,15 @@ const { lang } = Astro.props;
 
   .pv__btn:hover {
     border-color: #141414;
+  }
+
+  /* Finger-sized controls on touch screens. */
+  @media (pointer: coarse) {
+    .pv__btn {
+      width: 2.75rem;
+      height: 2.75rem;
+      font-size: 1.2rem;
+    }
   }
 
   .pv-lock {
