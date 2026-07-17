@@ -7,7 +7,7 @@ rem  el web automaticament en 2-3 minuts.
 rem ---------------------------------------------------------------
 cd /d "C:\CLAUDE\architecture-portfolio"
 git remote remove origin 2>nul
-git remote add origin https://github.com/alexsantae160305-glitch/alexsantae160305-glitch.github.io.git
+git remote add origin https://github.com/AlexArtazcoz/AlexArtazcoz.github.io.git
 
 git add -A
 git diff --cached --quiet || git commit -m "content: edicions des de l'editor"
@@ -20,6 +20,6 @@ echo.
 echo ---------------------------------------------------------------
 echo Si aqui sobre no hi ha cap "error" ni "fatal", ja esta enviat.
 echo El web es reconstrueix sol i en 2-3 minuts els canvis es veuen a:
-echo    https://alexsantae160305-glitch.github.io
+echo    https://alexartazcoz.github.io
 echo ---------------------------------------------------------------
 pause
