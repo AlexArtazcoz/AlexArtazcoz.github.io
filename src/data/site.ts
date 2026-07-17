@@ -40,8 +40,12 @@ export const site = {
   /** Used for the contact link (mailto:). */
   email: 'artazcoz.arch@gmail.com',
 
-  /** Put your CV at `public/cv.pdf`. Empty = the link is not shown yet. */
-  cvPath: '',
+  /** One CV per language, in `public/`. Empty string = link not shown. */
+  cvPath: {
+    en: '/Alex-Artazcoz-CV-EN.pdf',
+    ca: '/Alex-Artazcoz-CV-CA.pdf',
+    es: '/Alex-Artazcoz-CV-ES.pdf',
+  } satisfies Localized,
 
   socials: [] satisfies SocialLink[],
 };
@@ -49,16 +53,16 @@ export const site = {
 /** Short bio paragraphs shown in the About section, per language. */
 export const bio: Record<Lang, string[]> = {
   en: [
-    'I am an architecture student based in Barcelona, interested in the space between landscape, structure and everyday use.',
-    'My work moves between careful drawing and physical models, testing how simple material decisions shape light, movement and atmosphere.',
+    'I am a fourth-year architecture student at ETSAV (UPC), in Barcelona. The projects in this portfolio share one thread: reactivating what already exists — from the historic centres of mid-sized cities to a disused building, down to three pieces of furniture rescued from the bin.',
+    'I work between drawing, physical models and the building site: I have laboured on site and run the production side of a construction company, bringing AI tools such as Claude Code into everyday professional work.',
   ],
   ca: [
-    'Sóc estudiant d’arquitectura a Barcelona, interessat en l’espai entre el paisatge, l’estructura i l’ús quotidià.',
-    'El meu treball es mou entre el dibuix acurat i les maquetes físiques, provant com decisions materials senzilles configuren la llum, el moviment i l’atmosfera.',
+    'Sóc estudiant de quart d’arquitectura a l’ETSAV (UPC), a Barcelona. Els projectes d’aquest portfoli comparteixen un fil: reactivar allò que ja existeix — dels centres històrics de les ciutats mitjanes a un edifici en desús, fins a tres mobles rescatats de les escombraries.',
+    'Treballo entre el dibuix, la maqueta i l’obra: he estat a peu d’obra i a la producció d’una constructora, integrant eines d’IA com Claude Code en el treball professional de cada dia.',
   ],
   es: [
-    'Soy estudiante de arquitectura en Barcelona, interesado en el espacio entre el paisaje, la estructura y el uso cotidiano.',
-    'Mi trabajo se mueve entre el dibujo cuidadoso y las maquetas físicas, probando cómo decisiones materiales sencillas configuran la luz, el movimiento y la atmósfera.',
+    'Soy estudiante de cuarto de arquitectura en la ETSAV (UPC), en Barcelona. Los proyectos de este portafolio comparten un hilo: reactivar lo que ya existe — de los centros históricos de las ciudades medianas a un edificio en desuso, hasta tres muebles rescatados de la basura.',
+    'Trabajo entre el dibujo, la maqueta y la obra: he estado a pie de obra y en la producción de una constructora, integrando herramientas de IA como Claude Code en el trabajo profesional de cada día.',
   ],
 };
 

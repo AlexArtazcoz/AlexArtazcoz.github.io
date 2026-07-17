@@ -60,9 +60,9 @@ const { lang } = Astro.props;
             <a class="info__link" href={`mailto:${site.email}`}>{site.email}</a>
           </li>
           {
-            site.cvPath && (
+            site.cvPath[lang] && (
               <li>
-                <a class="info__link" href={site.cvPath} download>
+                <a class="info__link" href={site.cvPath[lang]} download>
                   {t(lang, 'info_cv')}
                 </a>
               </li>
