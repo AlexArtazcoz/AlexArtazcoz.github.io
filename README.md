@@ -51,6 +51,30 @@ add/remove a matching page under `src/pages/`. The canonical domain lives in
 `astro.config.mjs` (`site:`) and drives canonical URLs, `hreflang` and the
 sitemap — keep it matching wherever the site is actually served from.
 
+## Generated artifacts (scripts/)
+
+Three Node scripts keep the heavy artifacts in sync with the content. Re-run
+them after changing images, covers or project texts, then commit the output:
+
+```bash
+node scripts/rasterize-pdfs.mjs        # source PDFs → src/assets/*.jpg at max quality
+node scripts/build-og.mjs              # public/og/*.png share cards + favicon.ico + apple-touch-icon
+node scripts/build-portfolio-pdf.mjs   # public/Alex-Artazcoz-Portfolio-{EN,CA,ES}.pdf
+```
+
+`rasterize-pdfs.mjs` maps every asset to its source PDF under `C:\CLAUDE\PORTFOLIO`
+and only overwrites a file when the aspect ratio is preserved, so the saved
+canvas layouts keep working untouched.
+
+## Deep zoom, transitions, hover peeks
+
+- Clicking any image on a project page opens it full screen with
+  museum-style pan/zoom (OpenSeadragon, lazy-loaded) at native resolution.
+- Page navigations use native View Transitions (production builds only — in
+  dev the layout editor needs full page loads; check with `npm run preview`).
+  The index card cover morphs into the same image on the project canvas.
+- Hovering an index card slowly cycles two more images from that project.
+
 ## Deploy
 
 Static output — host it anywhere. On **Netlify** or **Vercel**, import the repo;
@@ -73,6 +97,5 @@ src/
 
 ## Deferred (easy to add later)
 
-Image lightbox/zoom, a real downloadable PDF portfolio, a contact form, dark
-mode, and richer motion were intentionally left out to keep this first version
-lean and well-structured.
+A contact form and dark mode were intentionally left out to keep the site lean
+and well-structured.
