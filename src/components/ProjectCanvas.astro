@@ -9,7 +9,7 @@
 import { Image } from 'astro:assets';
 import { fade } from 'astro:transitions';
 import { renderCanvas, CANVAS_W } from '../data/layout';
-import { frameGeometry, srcStyle, imgStyle } from '../data/frame';
+import { frameGeometry, srcStyle, imgStyle, viewerFrame } from '../data/frame';
 import { t, type Lang } from '../i18n/ui';
 
 interface Props {
@@ -23,7 +23,8 @@ interface Props {
 
 const { slug, title, lang, cover } = Astro.props;
 const canvas = renderCanvas(slug);
-const candidates = [400, 800, 1200, 1600, 2000];
+// Large steps included so retina screens get crisp linework on the canvas.
+const candidates = [400, 800, 1200, 1600, 2000, 2600, 3200];
 
 // The canvas item that acts as the project's cover (same resolution order as
 // coverFor in data/layout.ts) — it morphs from the index card on navigation.
@@ -56,10 +57,23 @@ const editorModel = {
       const widths = candidates.filter((w) => w <= it.src.width);
       const g = frameGeometry(it.na, it.crop);
       const isCover = !coverUsed && it.img === coverName && (coverUsed = true);
+      // The viewer reproduces this frame exactly: trim as a pixel clip, the
+      // quarter-turn, and the visible window as its opening viewport.
+      const vf = viewerFrame(it.na, it.crop);
       const attrs = {
         class: 'canvas__item',
         'data-img': it.img,
         'data-full': it.src.src,
+        'data-frame': JSON.stringify({
+          rot: vf.rot,
+          clip: [
+            Math.round(vf.clip[0] * it.src.width),
+            Math.round(vf.clip[1] * it.src.height),
+            Math.round(vf.clip[2] * it.src.width),
+            Math.round(vf.clip[3] * it.src.height),
+          ],
+          view: vf.view,
+        }),
         role: 'button',
         tabindex: '0',
         'aria-label': `${title} — ${t(lang, 'viewer_open')}`,
@@ -73,6 +87,7 @@ const editorModel = {
               alt={title}
               widths={widths.length ? widths : [it.src.width]}
               sizes={`${Math.max(10, Math.round(width))}vw`}
+              quality={90}
               loading="lazy"
               style={imgStyle(g)}
             />

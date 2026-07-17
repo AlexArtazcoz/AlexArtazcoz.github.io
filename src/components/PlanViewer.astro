@@ -175,9 +175,17 @@ const { lang } = Astro.props;
 
       const { default: OpenSeadragon } = await import('openseadragon');
       if (!active || active.root !== root) return; // closed while loading
+      // The canvas frame the visitor clicked: trim (pixel clip), quarter-turn
+      // and the exact window it was showing. The viewer opens on that same
+      // view, then lets you zoom deeper or out to the whole (trimmed) sheet.
+      let frame: { rot: number; clip: number[]; view: number[] } | null = null;
+      try {
+        frame = fig.dataset.frame ? JSON.parse(fig.dataset.frame) : null;
+      } catch {
+        frame = null;
+      }
       const viewer = OpenSeadragon({
         element: root.querySelector('.pv__stage') as HTMLElement,
-        tileSources: { type: 'image', url },
         // The 2D drawer has no GPU max-texture limit — our plans exceed 4096px.
         drawer: 'canvas',
         showNavigationControl: false,
@@ -189,7 +197,25 @@ const { lang } = Astro.props;
         minZoomImageRatio: 0.85,
         visibilityRatio: 0.85,
       });
-      viewer.addHandler('open', () => root.classList.add('pv--ready'));
+      viewer.addTiledImage({
+        tileSource: { type: 'image', url },
+        ...(frame
+          ? {
+              clip: new OpenSeadragon.Rect(frame.clip[0], frame.clip[1], frame.clip[2], frame.clip[3]),
+              degrees: frame.rot || 0,
+            }
+          : {}),
+        success: (ev: any) => {
+          if (!active || active.root !== root) return;
+          const b = ev.item.getClippedBounds();
+          const v = frame?.view;
+          const target = v
+            ? new OpenSeadragon.Rect(b.x + v[0] * b.width, b.y + v[1] * b.height, v[2] * b.width, v[3] * b.height)
+            : b;
+          viewer.viewport.fitBounds(target, true);
+          root.classList.add('pv--ready');
+        },
+      });
       active.viewer = viewer;
     };
 

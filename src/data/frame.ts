@@ -126,6 +126,65 @@ export function frameGeometry(na: number, crop: Crop): FrameGeometry {
   };
 }
 
+/** What the deep-zoom viewer needs to reproduce a frame exactly. */
+export interface ViewerFrame {
+  /** Quarter-turn rotation applied to the source. */
+  rot: number;
+  /** Trim of the source image, as fractions [left, top, width, height]. */
+  clip: [number, number, number, number];
+  /** Initial visible window within the rotated clipped image, as fractions
+   * [x, y, width, height] — exactly the region the canvas frame shows. */
+  view: [number, number, number, number];
+}
+
+/**
+ * Same pipeline as frameGeometry, solved for the viewer: which rectangle of
+ * the (trimmed, rotated) source is visible inside the frame right now.
+ */
+export function viewerFrame(na: number, crop: Crop): ViewerFrame {
+  const tr = crop.trim ?? noTrim();
+  const l = clamp(tr.l ?? 0, 0, MAX_TRIM);
+  const r = clamp(tr.r ?? 0, 0, MAX_TRIM);
+  const t = clamp(tr.t ?? 0, 0, MAX_TRIM);
+  const b = clamp(tr.b ?? 0, 0, MAX_TRIM);
+  const vw = Math.max(0.1, 1 - l - r);
+  const vh = Math.max(0.1, 1 - t - b);
+
+  const ta = na * (vw / vh);
+  const rot = normRot(crop.rot);
+  const quarter = rot === 90 || rot === 270;
+  const ea = quarter ? 1 / ta : ta;
+  const A = crop.aspect ?? ea;
+  const z = Math.max(1, crop.zoom ?? 1);
+
+  const Wf = 1;
+  const Hf = 1 / A;
+  let Fw: number;
+  let Fh: number;
+  if (ea >= A) {
+    Fh = Hf;
+    Fw = Hf * ea;
+  } else {
+    Fw = Wf;
+    Fh = Wf / ea;
+  }
+  Fw *= z;
+  Fh *= z;
+  const cx = Wf / 2 + (0.5 - clamp(crop.fx ?? 50, 0, 100) / 100) * (Fw - Wf);
+  const cy = Hf / 2 + (0.5 - clamp(crop.fy ?? 50, 0, 100) / 100) * (Fh - Hf);
+
+  const u0 = clamp((Fw / 2 - cx) / Fw, 0, 1);
+  const v0 = clamp((Fh / 2 - cy) / Fh, 0, 1);
+  const uw = Math.min(1 - u0, Wf / Fw);
+  const vv = Math.min(1 - v0, Hf / Fh);
+
+  return {
+    rot,
+    clip: [r4(l), r4(t), r4(vw), r4(vh)],
+    view: [r4(u0), r4(v0), r4(uw), r4(vv)],
+  };
+}
+
 export const srcStyle = (g: FrameGeometry): string =>
   `left:${g.src.left}%;top:${g.src.top}%;width:${g.src.width}%;height:${g.src.height}%;transform:rotate(${g.src.rot}deg);`;
 

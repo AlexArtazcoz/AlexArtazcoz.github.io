@@ -28,7 +28,7 @@ const { lang } = Astro.props;
  * first project, which is featured: full row, panoramic frame. */
 const CARD_ASPECT = 3 / 2;
 const FEATURED_ASPECT = 12 / 5;
-const candidates = [400, 700, 1000, 1400];
+const candidates = [400, 700, 1000, 1400, 2000];
 
 const cards = projects.map((p, i) => {
   const cover = coverFor(p.slug, p.cover);
