@@ -7,22 +7,34 @@
  * pan) by the shared geometry in src/data/frame.ts.
  */
 import { Image } from 'astro:assets';
+import { fade } from 'astro:transitions';
 import { renderCanvas, CANVAS_W } from '../data/layout';
 import { frameGeometry, srcStyle, imgStyle } from '../data/frame';
+import { t, type Lang } from '../i18n/ui';
 
 interface Props {
   slug: string;
   title: string;
+  lang: Lang;
+  /** Explicit cover fallback (Project.cover) so the index card can morph into
+   * the same image here via a shared view-transition name. */
+  cover?: string;
 }
 
-const { slug, title } = Astro.props;
+const { slug, title, lang, cover } = Astro.props;
 const canvas = renderCanvas(slug);
 const candidates = [400, 800, 1200, 1600, 2000];
+
+// The canvas item that acts as the project's cover (same resolution order as
+// coverFor in data/layout.ts) — it morphs from the index card on navigation.
+const coverName = canvas.cover ?? cover ?? canvas.items[0]?.img;
+let coverUsed = false;
 
 // Compact model consumed by the (dev-only) layout editor.
 const editorModel = {
   h: canvas.h,
   cover: canvas.cover ?? null,
+  picks: canvas.picks ?? null,
   items: canvas.items.map((it) => ({
     img: it.img,
     x: it.x,
@@ -43,25 +55,38 @@ const editorModel = {
       const width = (it.w / CANVAS_W) * 100;
       const widths = candidates.filter((w) => w <= it.src.width);
       const g = frameGeometry(it.na, it.crop);
-      return (
-        <figure
-          class="canvas__item"
-          data-img={it.img}
-          style={`left:${left}%; top:${top}%; width:${width}%; z-index:${it.z};`}
-        >
-          <div class="canvas__frame" style={`aspect-ratio:${g.aspect};`}>
-            <div class="canvas__src" style={srcStyle(g)}>
-              <Image
-                src={it.src}
-                alt={title}
-                widths={widths.length ? widths : [it.src.width]}
-                sizes={`${Math.max(10, Math.round(width))}vw`}
-                loading="lazy"
-                style={imgStyle(g)}
-              />
-            </div>
+      const isCover = !coverUsed && it.img === coverName && (coverUsed = true);
+      const attrs = {
+        class: 'canvas__item',
+        'data-img': it.img,
+        'data-full': it.src.src,
+        role: 'button',
+        tabindex: '0',
+        'aria-label': `${title} — ${t(lang, 'viewer_open')}`,
+        style: `left:${left}%; top:${top}%; width:${width}%; z-index:${it.z};`,
+      };
+      const inner = (
+        <div class="canvas__frame" style={`aspect-ratio:${g.aspect};`}>
+          <div class="canvas__src" style={srcStyle(g)}>
+            <Image
+              src={it.src}
+              alt={title}
+              widths={widths.length ? widths : [it.src.width]}
+              sizes={`${Math.max(10, Math.round(width))}vw`}
+              loading="lazy"
+              style={imgStyle(g)}
+            />
           </div>
+        </div>
+      );
+      // Only the cover carries the shared view-transition name (an undefined
+      // transition:name would still create a per-item transition group).
+      return isCover ? (
+        <figure {...attrs} transition:name={`cover-${slug}`} transition:animate={fade({ duration: 650 })}>
+          {inner}
         </figure>
+      ) : (
+        <figure {...attrs}>{inner}</figure>
       );
     })
   }

@@ -9,12 +9,14 @@
  * balanced set.
  */
 import { Image } from 'astro:assets';
+import { fade } from 'astro:transitions';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteHeader from './SiteHeader.astro';
 import SiteFooter from './SiteFooter.astro';
 import { projects } from '../data/projects';
-import { coverFor } from '../data/layout';
-import { frameGeometry, srcStyle, imgStyle, normRot } from '../data/frame';
+import { coverFor, renderCanvas } from '../data/layout';
+import { findImage } from '../data/assets';
+import { frameGeometry, srcStyle, imgStyle, normRot, defaultCrop } from '../data/frame';
 import type { Lang } from '../i18n/ui';
 
 interface Props {
@@ -39,10 +41,33 @@ const cards = projects.map((p, i) => {
   if (cover && crop && featured && frameGeometry(cover.na, { ...crop, aspect: null }).aspect < 1) {
     crop = { ...crop, rot: normRot((crop.rot ?? 0) + 90) };
   }
+  // Hovering a card slowly cycles more images from the project — a quiet
+  // invitation to open it. They follow the "◈ Selecció" picked in the layout
+  // editor (same set as the PDF booklet); canvas order is the fallback.
+  // Each peek keeps the trim/rotation it was given on the canvas but is shown
+  // WHOLE (contain-fitted and centred), never cropped by the card's shape.
+  const canvas = renderCanvas(p.slug);
+  const coverName = canvas.cover ?? p.cover ?? canvas.items[0]?.img;
+  const peekNames = (canvas.picks?.length ? canvas.picks : canvas.items.map((it) => it.img))
+    .filter((n) => n !== coverName)
+    .slice(0, 3);
+  const frameAspect = featured ? FEATURED_ASPECT : CARD_ASPECT;
+  const peeks = peekNames.flatMap((n) => {
+    const img = findImage(p.slug, n);
+    if (!img) return [];
+    const itemCrop = canvas.items.find((it) => it.img === n)?.crop;
+    const pg = frameGeometry(img.src.width / img.src.height, {
+      ...defaultCrop(),
+      rot: itemCrop?.rot,
+      trim: itemCrop?.trim,
+    });
+    return [{ src: img.src, g: pg, fit: pg.aspect >= frameAspect ? 'width' : 'height' }];
+  });
   return {
     p,
     cover,
     featured,
+    peeks,
     // Same crop, refitted to the card: rotation and trim are preserved.
     g: cover
       ? frameGeometry(cover.na, { ...crop, aspect: featured ? FEATURED_ASPECT : CARD_ASPECT })
@@ -57,10 +82,15 @@ const cards = projects.map((p, i) => {
   <main id="main" class="container">
     <ul class="grid">
       {
-        cards.map(({ p, cover, g, featured }) => (
+        cards.map(({ p, cover, g, featured, peeks }) => (
           <li class:list={{ feat: featured }}>
             <a class="card" href={`${lang === 'en' ? '' : `/${lang}`}/projects/${p.slug}/`}>
-              <span class="card__frame">
+              <span
+                class="card__frame"
+                data-peeks={peeks.length || undefined}
+                transition:name={`cover-${p.slug}`}
+                transition:animate={fade({ duration: 650 })}
+              >
                 {cover && g && (
                   <span class="card__src" style={srcStyle(g)}>
                     <Image
@@ -73,8 +103,30 @@ const cards = projects.map((p, i) => {
                     />
                   </span>
                 )}
+                {peeks.map((pk, i) => (
+                  <span class="card__peek" data-i={i + 1}>
+                    <span class="card__peek-box" style={`aspect-ratio:${pk.g.aspect}; ${pk.fit}:100%;`}>
+                      <span class="card__peek-src" style={srcStyle(pk.g)}>
+                        <Image
+                          src={pk.src}
+                          alt=""
+                          widths={[featured ? 1400 : 700]}
+                          sizes={featured ? '92vw' : '30vw'}
+                          loading="lazy"
+                          style={imgStyle(pk.g)}
+                        />
+                      </span>
+                    </span>
+                  </span>
+                ))}
               </span>
-              <span class="card__title">{p.title[lang]}</span>
+              <span
+                class="card__title"
+                transition:name={`title-${p.slug}`}
+                transition:animate={fade({ duration: 650 })}
+              >
+                {p.title[lang]}
+              </span>
             </a>
           </li>
         ))
@@ -142,6 +194,37 @@ const cards = projects.map((p, i) => {
     filter: grayscale(0);
   }
 
+  /* Hover peeks: extra project images that crossfade over the cover. Each one
+     is contain-fitted (whole image, centred, canvas trim kept) on the card's
+     neutral ground. */
+  /* White ground so the margins around a contained peek blend seamlessly
+     with the white paper of the drawings. */
+  .card__frame :global(.card__peek) {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+
+  .card__frame :global(.card__peek-box) {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card__frame :global(.card__peek-src) {
+    position: absolute;
+    overflow: hidden;
+    transform-origin: center;
+  }
+
+  /* Opacity and stacking order are driven by the peek script: each image
+     fades in ON TOP of the previous one (which stays opaque underneath), so
+     the cover never shows through mid-transition. */
+
   .card__title {
     display: block;
     margin-top: 0.55rem;
@@ -163,3 +246,62 @@ const cards = projects.map((p, i) => {
     margin-top: 0.7rem;
   }
 </style>
+
+<script>
+  // Cycle the hover peeks (pointer devices only). Idempotent so it can run on
+  // both the initial load and every ClientRouter navigation.
+  const initPeeks = () => {
+    if (!window.matchMedia('(hover: hover)').matches) return;
+    document.querySelectorAll<HTMLElement>('.card__frame[data-peeks]').forEach((frame) => {
+      if (frame.dataset.bound) return;
+      frame.dataset.bound = '1';
+      const peeks = Array.from(frame.querySelectorAll<HTMLElement>('.card__peek'));
+      const card = frame.closest('.card');
+      if (!card || !peeks.length) return;
+      let timer: number | undefined;
+      let z = 10;
+      let current = -1;
+
+      // Fade the next image in ON TOP of whatever is showing: it restarts
+      // hidden, jumps above the stack, then eases to opaque — the previous
+      // image (and never the cover) is what shows through mid-fade.
+      const show = (el: HTMLElement) => {
+        el.style.transition = 'none';
+        el.style.opacity = '0';
+        el.style.zIndex = String(++z);
+        void el.offsetWidth;
+        el.style.transition = '';
+        el.style.opacity = '1';
+      };
+
+      card.addEventListener('mouseenter', () => {
+        current = 0;
+        show(peeks[0]);
+        if (peeks.length > 1) {
+          timer = window.setInterval(() => {
+            current = (current + 1) % peeks.length;
+            show(peeks[current]);
+          }, 1300);
+        }
+      });
+
+      card.addEventListener('mouseleave', () => {
+        window.clearInterval(timer);
+        // Drop the buried layers silently, then fade only the top one out so
+        // the return to the cover is a single clean crossfade.
+        const top = peeks[Math.max(current, 0)];
+        for (const el of peeks) {
+          if (el === top) continue;
+          el.style.transition = 'none';
+          el.style.opacity = '0';
+          void el.offsetWidth;
+          el.style.transition = '';
+        }
+        top.style.opacity = '0';
+        current = -1;
+      });
+    });
+  };
+  initPeeks();
+  document.addEventListener('astro:page-load', initPeeks);
+</script>

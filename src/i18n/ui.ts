@@ -46,6 +46,9 @@ export const ui = {
     info_skills: 'Skills & software',
     info_contact: 'Contact',
     info_cv: 'CV (PDF)',
+    info_portfolio: 'Portfolio (PDF)',
+    viewer_open: 'View at full resolution',
+    viewer_close: 'Close viewer',
     meta_description:
       'Architecture portfolio — a selection of academic and design projects.',
   },
@@ -67,6 +70,9 @@ export const ui = {
     info_skills: 'Competències i programari',
     info_contact: 'Contacte',
     info_cv: 'CV (PDF)',
+    info_portfolio: 'Portfoli (PDF)',
+    viewer_open: 'Veure a resolució completa',
+    viewer_close: 'Tanca el visor',
     meta_description:
       'Portfoli d’arquitectura — una selecció de projectes acadèmics i de disseny.',
   },
@@ -88,6 +94,9 @@ export const ui = {
     info_skills: 'Competencias y software',
     info_contact: 'Contacto',
     info_cv: 'CV (PDF)',
+    info_portfolio: 'Portafolio (PDF)',
+    viewer_open: 'Ver a resolución completa',
+    viewer_close: 'Cerrar el visor',
     meta_description:
       'Portafolio de arquitectura — una selección de proyectos académicos y de diseño.',
   },

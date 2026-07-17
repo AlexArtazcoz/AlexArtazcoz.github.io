@@ -4,11 +4,13 @@
  * labelled fact sheet ("fitxa tècnica"), the concept text, then the long
  * free-canvas sequence of images. The layout editor loads here in dev.
  */
+import { fade } from 'astro:transitions';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteHeader from './SiteHeader.astro';
 import SiteFooter from './SiteFooter.astro';
 import ProjectCanvas from './ProjectCanvas.astro';
 import CanvasEditor from './CanvasEditor.astro';
+import PlanViewer from './PlanViewer.astro';
 import ZoomBar from './ZoomBar.astro';
 import { t, type Lang } from '../i18n/ui';
 import { site } from '../data/site';
@@ -32,9 +34,28 @@ const fitxa = [
   { label: t(lang, 'fitxa_year'), value: project.year },
   { label: t(lang, 'fitxa_studio'), value: project.studio?.[lang] ?? '' },
 ].filter((f) => f.value);
+
+/** Structured data so the project shows up properly in search results. */
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'CreativeWork',
+  name: project.title[lang],
+  description: project.concept[lang],
+  dateCreated: project.year,
+  inLanguage: lang,
+  creator: { '@type': 'Person', name: site.name },
+  image: new URL(`/og/${project.slug}.png`, Astro.site).href,
+};
 ---
 
-<BaseLayout lang={lang} path={path} title={`${site.name} — ${project.title[lang]}`}>
+<BaseLayout
+  lang={lang}
+  path={path}
+  title={`${site.name} — ${project.title[lang]}`}
+  description={project.concept[lang]}
+  ogImage={`/og/${project.slug}.png`}
+  schema={schema}
+>
   <SiteHeader lang={lang} path={path} active="work" />
 
   <main id="main">
@@ -42,7 +63,13 @@ const fitxa = [
       <ZoomBar lang={lang} />
 
       <header class="pj">
-        <h1 class="pj__title">{project.title[lang]}</h1>
+        <h1
+          class="pj__title"
+          transition:name={`title-${project.slug}`}
+          transition:animate={fade({ duration: 650 })}
+        >
+          {project.title[lang]}
+        </h1>
 
         {
           fitxa.length > 0 && (
@@ -60,7 +87,7 @@ const fitxa = [
         {project.concept[lang] && <p class="pj__concept">{project.concept[lang]}</p>}
       </header>
 
-      <ProjectCanvas slug={project.slug} title={project.title[lang]} />
+      <ProjectCanvas slug={project.slug} title={project.title[lang]} lang={lang} cover={project.cover} />
 
       {
         project.credits && project.credits.length > 0 && (
@@ -90,6 +117,8 @@ const fitxa = [
   </main>
 
   <SiteFooter />
+
+  <PlanViewer lang={lang} />
 
   {import.meta.env.DEV && <CanvasEditor />}
 </BaseLayout>

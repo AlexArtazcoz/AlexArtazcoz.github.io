@@ -36,6 +36,9 @@ export interface Canvas {
   items: Item[];
   /** Image name shown as the index cover (chosen in the layout editor). */
   cover?: string;
+  /** Up to 4 hand-picked images (editor "◈ Selecció"): they cycle on the
+   * index-card hover and become the project's pages in the PDF booklet. */
+  picks?: string[];
 }
 
 export type Layout = Record<string, Canvas>;
@@ -93,7 +96,12 @@ export function coverFor(
  * content — it ends just below the last image — so a composition never trails
  * empty space, whatever height happens to be stored.
  */
-export function renderCanvas(slug: string): { h: number; items: ResolvedItem[]; cover?: string } {
+export function renderCanvas(slug: string): {
+  h: number;
+  items: ResolvedItem[];
+  cover?: string;
+  picks?: string[];
+} {
   const canvas = canvasFor(slug);
   const items: ResolvedItem[] = [];
   for (const it of canvas.items) {
@@ -109,5 +117,5 @@ export function renderCanvas(slug: string): { h: number; items: ResolvedItem[]; 
   }
   const h = items.length ? Math.max(Math.round(bottom + GAP), 200) : canvas.h;
 
-  return { h, items, cover: canvas.cover };
+  return { h, items, cover: canvas.cover, picks: canvas.picks };
 }

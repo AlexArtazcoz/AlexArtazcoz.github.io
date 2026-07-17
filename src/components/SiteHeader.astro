@@ -20,7 +20,7 @@ interface Props {
 const { lang, path = '', active } = Astro.props;
 ---
 
-<header class="hd container">
+<header class="hd container" transition:name="site-header" transition:animate="none">
   <a class="hd__name" href={localePath(lang, '')}>{site.name}</a>
 
   <nav class="hd__nav" aria-label="Site">

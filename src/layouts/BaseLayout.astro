@@ -6,6 +6,7 @@
 import '@fontsource-variable/archivo';
 import '../styles/global.css';
 
+import { ClientRouter } from 'astro:transitions';
 import { languages, t, type Lang } from '../i18n/ui';
 import { localePath } from '../i18n/utils';
 import { site } from '../data/site';
@@ -16,15 +17,31 @@ interface Props {
   path?: string;
   title?: string;
   description?: string;
+  /** Site-relative Open Graph image; defaults to the shared card. */
+  ogImage?: string;
+  /** Page-specific JSON-LD (e.g. a project's CreativeWork). */
+  schema?: Record<string, unknown>;
 }
 
-const { lang, path = '', title, description } = Astro.props;
+const { lang, path = '', title, description, ogImage, schema } = Astro.props;
 
 const pageTitle = title ?? `${site.name} — ${site.role[lang]}`;
 const pageDescription = description ?? t(lang, 'meta_description');
 
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogLocale: Record<Lang, string> = { en: 'en_US', ca: 'ca_ES', es: 'es_ES' };
+const ogImageUrl = new URL(ogImage ?? '/og/default.png', Astro.site);
+
+/** The author, stated once on every page for search engines. */
+const personSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: site.name,
+  jobTitle: site.role[lang],
+  email: `mailto:${site.email}`,
+  url: Astro.site?.href,
+  address: { '@type': 'PostalAddress', addressLocality: 'Barcelona', addressCountry: 'ES' },
+};
 ---
 
 <!doctype html>
@@ -39,6 +56,11 @@ const ogLocale: Record<Lang, string> = { en: 'en_US', ca: 'ca_ES', es: 'es_ES' }
     <meta name="theme-color" content="#ffffff" />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Native view transitions (prod only: the dev-only layout editor needs
+         full page loads, and transitions are best previewed with `npm run preview`). -->
+    {import.meta.env.PROD && <ClientRouter />}
 
     <!-- The same page in the other languages. -->
     {
@@ -60,9 +82,16 @@ const ogLocale: Record<Lang, string> = { en: 'en_US', ca: 'ca_ES', es: 'es_ES' }
         .filter((l) => l !== lang)
         .map((l) => <meta property="og:locale:alternate" content={ogLocale[l]} />)
     }
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
+    {schema && <script type="application/ld+json" set:html={JSON.stringify(schema)} />}
   </head>
 
   <body>

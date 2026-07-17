@@ -138,3 +138,37 @@ button {
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
+
+/* ---- View transitions (production navigations) --------------------------
+ * The page settles rather than switches: the old view breathes out, the new
+ * one rises a few pixels into place, and the clicked cover + title glide to
+ * their new position with a long, soft ease-out. Calm, never showy.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: aa-page-out 0.4s cubic-bezier(0.33, 0, 0.2, 1) both;
+  }
+
+  ::view-transition-new(root) {
+    animation: aa-page-in 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Morphing pairs (cover image, title): slow glide with a feather landing. */
+  ::view-transition-group(*) {
+    animation-duration: 0.65s;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes aa-page-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes aa-page-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+}

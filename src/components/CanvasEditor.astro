@@ -85,6 +85,7 @@
   <div class="ed-grp">
     <button type="button" data-ed="pan">Reenquadrar</button>
     <button type="button" data-ed="cover">★ Portada</button>
+    <button type="button" data-ed="pick" title="Fins a 4 imatges: passi del ratolí a la portada i pàgines del portfoli PDF">◈ Selecció</button>
     <button type="button" data-ed="reset" title="Reiniciar vores, gir, forma i zoom">Reiniciar</button>
     <button type="button" data-ed="delete" class="ed-danger">Eliminar</button>
   </div>
@@ -253,6 +254,22 @@
     pointer-events: none;
   }
 
+  /* Numbered badge on the images picked for hover peeks + the PDF booklet. */
+  :global(body.ed-on .canvas__item[data-ed-pick]::before) {
+    content: attr(data-ed-pick) ' ◈';
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    z-index: 6;
+    background: #1a6dff;
+    color: #fff;
+    font-size: 11px;
+    line-height: 1;
+    padding: 3px 4px;
+    border-radius: 3px;
+    pointer-events: none;
+  }
+
   :global(.ed-handle) {
     position: absolute;
     right: -8px;
@@ -335,6 +352,7 @@
       stage: HTMLElement;
       h: number;
       cover: string | null;
+      picks: string[];
       items: Item[];
       gv: HTMLElement;
       gh: HTMLElement;
@@ -358,6 +376,7 @@
     const zoomInput = panel.querySelector('[data-zoom]') as HTMLInputElement;
     const panBtn = panel.querySelector('[data-ed="pan"]') as HTMLButtonElement;
     const coverBtn = panel.querySelector('[data-ed="cover"]') as HTMLButtonElement;
+    const pickBtn = panel.querySelector('[data-ed="pick"]') as HTMLButtonElement;
     const deleteBtn = panel.querySelector('[data-ed="delete"]') as HTMLButtonElement;
 
     const geom = (it: Item) => frameGeometry(it.na, it.crop);
@@ -372,6 +391,7 @@
       const model = JSON.parse(modelEl.textContent) as {
         h: number;
         cover: string | null;
+        picks?: string[] | null;
         items: Omit<Item, 'el'>[];
       };
       const items: Item[] = [];
@@ -400,6 +420,7 @@
         stage,
         h: model.h,
         cover: model.cover,
+        picks: model.picks ?? [],
         items,
         gv,
         gh,
@@ -407,11 +428,21 @@
         naturalW: stage.getBoundingClientRect().width,
       };
       refreshCoverBadge(slug);
+      refreshPickBadges(slug);
     });
 
     function refreshCoverBadge(slug: string) {
       const st = state[slug];
       st.items.forEach((it) => it.el.classList.toggle('ed-cover', it.img === st.cover));
+    }
+
+    function refreshPickBadges(slug: string) {
+      const st = state[slug];
+      st.items.forEach((it) => {
+        const i = st.picks.indexOf(it.img);
+        if (i === -1) delete it.el.dataset.edPick;
+        else it.el.dataset.edPick = String(i + 1);
+      });
     }
 
     /* ---- Overview (zoom-out) fit ---------------------------------------- */
@@ -770,11 +801,13 @@
       syncCover();
     }
 
-    /** The cover is a single image, so the button is dead for a pack. */
+    /** Cover and pick act on a single image, so both buttons die for a pack. */
     function syncCover() {
       const solo = sel && sel.items.length === 1 ? sel.items[0] : null;
       coverBtn.disabled = !solo;
       coverBtn.classList.toggle('ed-active', !!solo && state[sel!.slug].cover === solo.img);
+      pickBtn.disabled = !solo;
+      pickBtn.classList.toggle('ed-active', !!solo && state[sel!.slug].picks.includes(solo.img));
     }
 
     /** Apply a change to every selected image and reflow the canvas. */
@@ -925,6 +958,7 @@
           canvas: {
             h: newH,
             ...(st.cover ? { cover: st.cover } : {}),
+            ...(st.picks.length ? { picks: st.picks } : {}),
             items: serializeItems(st),
           },
           item,
@@ -1028,6 +1062,25 @@
       status(st.cover ? 'Portada: ' + st.cover : 'Sense portada (es farà servir la primera imatge)');
     });
 
+    pickBtn.addEventListener('click', () => {
+      const it = sel && sel.items.length === 1 ? sel.items[0] : null;
+      if (!it) return;
+      const st = state[sel!.slug];
+      const i = st.picks.indexOf(it.img);
+      if (i >= 0) st.picks.splice(i, 1);
+      else if (st.picks.length >= 4) {
+        status('La selecció ja té 4 imatges — treu-ne una primer.');
+        return;
+      } else st.picks.push(it.img);
+      refreshPickBadges(sel!.slug);
+      syncCover();
+      status(
+        st.picks.length
+          ? 'Selecció (hover + portfoli PDF), en ordre: ' + st.picks.join(', ')
+          : 'Sense selecció (es faran servir les primeres imatges del llenç)',
+      );
+    });
+
     deleteBtn.addEventListener('click', () => {
       if (!sel) return;
       const { slug, items } = sel;
@@ -1035,6 +1088,7 @@
       const gone = new Set(items);
       st.items = st.items.filter((i) => !gone.has(i));
       if (st.cover && items.some((i) => i.img === st.cover)) st.cover = null;
+      st.picks = st.picks.filter((n) => !items.some((i) => i.img === n));
       items.forEach((i) => i.el.remove());
       const n = items.length;
       deselect();
@@ -1093,6 +1147,7 @@
         payload[slug] = {
           h: Math.round(st.h),
           ...(st.cover ? { cover: st.cover } : {}),
+          ...(st.picks.length ? { picks: st.picks } : {}),
           items: serializeItems(st),
         };
       }

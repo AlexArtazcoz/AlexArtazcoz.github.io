@@ -62,11 +62,16 @@ const { lang } = Astro.props;
 </style>
 
 <script>
-  const KEY = 'aa-zoom';
-  const MIN = 0.6;
-  const MAX = 1.2;
-  const bar = document.querySelector('[data-zoombar]');
-  if (bar) {
+  // Idempotent init: runs on the initial load and again after every
+  // ClientRouter navigation (the swapped-in bar and body start unbound).
+  const initZoomBar = () => {
+    const KEY = 'aa-zoom';
+    const MIN = 0.6;
+    const MAX = 1.2;
+    const bar = document.querySelector('[data-zoombar]') as HTMLElement | null;
+    if (!bar || bar.dataset.bound) return;
+    bar.dataset.bound = '1';
+
     const val = bar.querySelector('.zoom__val') as HTMLElement;
     const clamp = (v: number) => Math.min(MAX, Math.max(MIN, Math.round(v * 10) / 10));
     let zoom = clamp(parseFloat(localStorage.getItem(KEY) ?? '1') || 1);
@@ -88,5 +93,7 @@ const { lang } = Astro.props;
     });
 
     apply();
-  }
+  };
+  initZoomBar();
+  document.addEventListener('astro:page-load', initZoomBar);
 </script>

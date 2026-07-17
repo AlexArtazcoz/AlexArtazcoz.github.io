@@ -87,6 +87,7 @@ function editorEndpoints() {
               const entry = {
                 h: Math.round(canvas.h),
                 ...(canvas.cover ? { cover: canvas.cover } : {}),
+                ...(canvas.picks?.length ? { picks: canvas.picks } : {}),
                 items: [...canvas.items, { ...item, img: finalStem }],
               };
               mergeLayout({ [slug]: entry });

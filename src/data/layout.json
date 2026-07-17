@@ -2,6 +2,12 @@
   "tap-iii": {
     "h": 2874,
     "cover": "03-img",
+    "picks": [
+      "05-img",
+      "01-img",
+      "04-img",
+      "02-img"
+    ],
     "items": [
       {
         "img": "01-img",
@@ -73,6 +79,12 @@
   "rap": {
     "h": 3460,
     "cover": "05-img",
+    "picks": [
+      "01-descomposicio",
+      "02-recomposicio",
+      "04-novelagrafica",
+      "03-cartell"
+    ],
     "items": [
       {
         "img": "01-descomposicio",
@@ -196,12 +208,18 @@
   "tap-v": {
     "h": 4279,
     "cover": "02-a1-espaiemocional-1",
+    "picks": [
+      "08-tap5-secciodetallestrategic",
+      "07-tap5-secciodetallunitat",
+      "04-planta-unitat-3",
+      "03-calibrar-seccionslongitudinals-s-16-30"
+    ],
     "items": [
       {
         "img": "02-a1-espaiemocional-1",
-        "x": 130,
-        "y": 82,
-        "w": 749,
+        "x": 69,
+        "y": 40,
+        "w": 870,
         "z": 2,
         "crop": {
           "aspect": null,
@@ -305,6 +323,11 @@
   "tap-vi": {
     "h": 4044,
     "cover": "p1020425",
+    "picks": [
+      "03-l3",
+      "04-l4",
+      "02-l2"
+    ],
     "items": [
       {
         "img": "01-l0-1",
@@ -395,6 +418,12 @@
   "balaguer": {
     "h": 8875,
     "cover": "01-orto-balaguer",
+    "picks": [
+      "11-foto-torrent",
+      "13-planols-p08",
+      "14-general-balaguer",
+      "13-planols-p06"
+    ],
     "items": [
       {
         "img": "01-orto-balaguer",
@@ -624,14 +653,20 @@
       {
         "img": "13-planols-p08",
         "x": 18,
-        "y": 5322,
+        "y": 5369,
         "w": 956,
         "z": 20,
         "crop": {
           "aspect": null,
           "fx": 50,
           "fy": 50,
-          "zoom": 1
+          "zoom": 1,
+          "trim": {
+            "t": 0.055,
+            "r": 0,
+            "b": 0.055,
+            "l": 0
+          }
         }
       },
       {
@@ -736,6 +771,12 @@
   "tap-iv": {
     "h": 8766,
     "cover": "02-imatges-p02",
+    "picks": [
+      "02-imatges-p01",
+      "01-quadern-p09",
+      "02-imatges-p17",
+      "02-imatges-p03"
+    ],
     "items": [
       {
         "img": "01-quadern-p05",
@@ -792,7 +833,7 @@
       {
         "img": "01-quadern-p09",
         "x": 169,
-        "y": 6513,
+        "y": 6476,
         "w": 630,
         "z": 9,
         "crop": {
@@ -803,7 +844,7 @@
           "trim": {
             "t": 0.32,
             "r": 0,
-            "b": 0,
+            "b": 0.1,
             "l": 0
           }
         }
@@ -824,14 +865,20 @@
       {
         "img": "02-imatges-p01",
         "x": 169,
-        "y": 2822,
+        "y": 2963,
         "w": 630,
         "z": 16,
         "crop": {
           "aspect": null,
           "fx": 50,
           "fy": 50,
-          "zoom": 1
+          "zoom": 1,
+          "trim": {
+            "t": 0.18,
+            "r": 0,
+            "b": 0.225,
+            "l": 0
+          }
         }
       },
       {
@@ -960,7 +1007,7 @@
       {
         "img": "02-imatges-p14",
         "x": 169,
-        "y": 5479,
+        "y": 5429,
         "w": 630,
         "z": 29,
         "crop": {
@@ -1005,8 +1052,14 @@
     ]
   },
   "tap-i": {
-    "h": 10902,
+    "h": 10901,
     "cover": "01-llibret-p35",
+    "picks": [
+      "01-llibret-p31",
+      "01-llibret-p36",
+      "01-llibret-p37",
+      "01-llibret-p40"
+    ],
     "items": [
       {
         "img": "01-llibret-p03",
@@ -1087,7 +1140,7 @@
       {
         "img": "01-llibret-p31",
         "x": 24,
-        "y": 4342,
+        "y": 4340,
         "w": 956,
         "z": 31,
         "crop": {
@@ -1097,9 +1150,9 @@
           "zoom": 1,
           "rot": 90,
           "trim": {
-            "t": 0.125,
+            "t": 0.095,
             "r": 0,
-            "b": 0.045,
+            "b": 0,
             "l": 0
           }
         }

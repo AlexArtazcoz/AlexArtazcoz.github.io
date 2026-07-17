@@ -47,6 +47,13 @@ export const site = {
     es: '/Alex-Artazcoz-CV-ES.pdf',
   } satisfies Localized,
 
+  /** Auto-generated portfolio booklet per language (see scripts/build-portfolio-pdf.mjs). */
+  portfolioPath: {
+    en: '/Alex-Artazcoz-Portfolio-EN.pdf',
+    ca: '/Alex-Artazcoz-Portfolio-CA.pdf',
+    es: '/Alex-Artazcoz-Portfolio-ES.pdf',
+  } satisfies Localized,
+
   socials: [] satisfies SocialLink[],
 };
 

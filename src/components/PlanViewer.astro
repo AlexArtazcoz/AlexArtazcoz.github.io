@@ -1,0 +1,210 @@
+---
+/**
+ * Deep-zoom viewer for the canvas images (museum-style, OpenSeadragon).
+ * Clicking any drawing on a project page opens it full screen at the file's
+ * native resolution, with smooth wheel/pinch zoom and pan.
+ *
+ * The overlay DOM is built in JS on demand (so it works across ClientRouter
+ * swaps) and OpenSeadragon is imported lazily — visitors who never open a
+ * plan never download it. This component only contributes the localized
+ * labels node, the styles, and the one-time document-level bindings.
+ */
+import { t, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+---
+
+<div
+  data-planviewer
+  hidden
+  data-l-close={t(lang, 'viewer_close')}
+  data-l-in={t(lang, 'zoom_in')}
+  data-l-out={t(lang, 'zoom_out')}
+>
+</div>
+
+<style is:global>
+  .canvas__item[data-full] {
+    cursor: zoom-in;
+  }
+
+  .pv {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.985);
+    animation: pv-in 0.22s ease both;
+  }
+
+  @keyframes pv-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .pv__stage {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .pv--ready .pv__stage {
+    opacity: 1;
+  }
+
+  /* Thin rotating arc while the full-resolution file decodes. */
+  .pv__spin {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1.6rem;
+    height: 1.6rem;
+    margin: -0.8rem 0 0 -0.8rem;
+    border: 1px solid #e3e3e0;
+    border-top-color: #141414;
+    border-radius: 50%;
+    animation: pv-spin 0.8s linear infinite;
+  }
+
+  .pv--ready .pv__spin {
+    display: none;
+  }
+
+  @keyframes pv-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .pv__bar {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.4rem;
+    z-index: 2;
+  }
+
+  .pv__btn {
+    width: 2.2rem;
+    height: 2.2rem;
+    display: grid;
+    place-items: center;
+    background: #fff;
+    border: 1px solid #e3e3e0;
+    color: #141414;
+    font: inherit;
+    font-size: 1.05rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .pv__btn:hover {
+    border-color: #141414;
+  }
+
+  .pv-lock {
+    overflow: hidden;
+  }
+</style>
+
+<script>
+  // Bound once per browser session; survives ClientRouter navigations.
+  if (!(window as any).__aaPlanViewer) {
+    (window as any).__aaPlanViewer = true;
+
+    let active: { root: HTMLElement; viewer: any } | null = null;
+
+    const close = () => {
+      if (!active) return;
+      try {
+        active.viewer?.destroy();
+      } catch {
+        /* already gone */
+      }
+      active.root.remove();
+      document.documentElement.classList.remove('pv-lock');
+      active = null;
+    };
+
+    const open = async (fig: HTMLElement) => {
+      const url = fig.dataset.full;
+      if (!url || active) return;
+
+      const labels = (document.querySelector('[data-planviewer]') as HTMLElement)?.dataset ?? {};
+      const root = document.createElement('div');
+      root.className = 'pv';
+      root.innerHTML =
+        `<div class="pv__stage"></div>` +
+        `<div class="pv__spin" aria-hidden="true"></div>` +
+        `<div class="pv__bar">` +
+        `<button type="button" class="pv__btn" data-pv="out" aria-label="${labels.lOut ?? '−'}">−</button>` +
+        `<button type="button" class="pv__btn" data-pv="in" aria-label="${labels.lIn ?? '+'}">+</button>` +
+        `<button type="button" class="pv__btn" data-pv="close" aria-label="${labels.lClose ?? '×'}">×</button>` +
+        `</div>`;
+      document.body.appendChild(root);
+      document.documentElement.classList.add('pv-lock');
+      active = { root, viewer: null };
+
+      root.addEventListener('click', (e) => {
+        const b = (e.target as HTMLElement).closest('[data-pv]') as HTMLElement | null;
+        if (!b || !active) return;
+        if (b.dataset.pv === 'close') return close();
+        const v = active.viewer?.viewport;
+        if (!v) return;
+        v.zoomBy(b.dataset.pv === 'in' ? 1.4 : 1 / 1.4);
+        v.applyConstraints();
+      });
+
+      const { default: OpenSeadragon } = await import('openseadragon');
+      if (!active || active.root !== root) return; // closed while loading
+      const viewer = OpenSeadragon({
+        element: root.querySelector('.pv__stage') as HTMLElement,
+        tileSources: { type: 'image', url },
+        // The 2D drawer has no GPU max-texture limit — our plans exceed 4096px.
+        drawer: 'canvas',
+        showNavigationControl: false,
+        animationTime: 0.4,
+        springStiffness: 7.5,
+        zoomPerScroll: 1.35,
+        zoomPerClick: 1.8,
+        maxZoomPixelRatio: 2.5,
+        minZoomImageRatio: 0.85,
+        visibilityRatio: 0.85,
+      });
+      viewer.addHandler('open', () => root.classList.add('pv--ready'));
+      active.viewer = viewer;
+    };
+
+    document.addEventListener('click', (e) => {
+      const fig = (e.target as HTMLElement).closest('.canvas__item[data-full]') as HTMLElement | null;
+      if (!fig) return;
+      // Never fight the dev-only layout editor for the pointer.
+      if (document.body.classList.contains('ed-on')) return;
+      e.preventDefault();
+      open(fig);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') return close();
+      if (e.key === 'Enter' || e.key === ' ') {
+        const el = document.activeElement as HTMLElement | null;
+        if (el?.matches('.canvas__item[data-full]')) {
+          e.preventDefault();
+          open(el);
+        }
+      }
+    });
+
+    // Leaving the page (ClientRouter) must tear the overlay down.
+    document.addEventListener('astro:before-swap', close);
+  }
+</script>
