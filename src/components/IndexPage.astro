@@ -225,10 +225,16 @@ const cards = projects.map((p, i) => {
      fades in ON TOP of the previous one (which stays opaque underneath), so
      the cover never shows through mid-transition. */
 
+  /* Quiet caption: small and grey, taking ink only when the card is hovered. */
   .card__title {
     display: block;
-    margin-top: 0.55rem;
-    font-size: var(--fs-s);
+    margin-top: 0.5rem;
+    font-size: var(--fs-xs);
+    color: var(--grey);
+    transition: color 0.25s ease;
+  }
+
+  .card:hover .card__title {
     color: var(--ink);
   }
 
@@ -242,8 +248,8 @@ const cards = projects.map((p, i) => {
   }
 
   .feat .card__title {
-    font-size: var(--fs-m);
-    margin-top: 0.7rem;
+    font-size: var(--fs-s);
+    margin-top: 0.6rem;
   }
 </style>
 
