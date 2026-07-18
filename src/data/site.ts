@@ -57,19 +57,25 @@ export const site = {
   socials: [] satisfies SocialLink[],
 };
 
-/** Short bio paragraphs shown in the About section, per language. */
+/** Bio paragraphs shown in the About section (and in the PDF booklet), per language. */
 export const bio: Record<Lang, string[]> = {
   en: [
-    'I am a fourth-year architecture student at ETSAV (UPC), in Barcelona. The projects in this portfolio share one thread: reactivating what already exists — from the historic centres of mid-sized cities to a disused building, down to three pieces of furniture rescued from the bin.',
-    'I work between drawing, physical models and the building site: I have laboured on site and run the production side of a construction company, bringing AI tools such as Claude Code into everyday professional work.',
+    'I am a fourth-year architecture student at ETSAV (UPC), in Barcelona. I work between drawing, physical models and the building site: I have laboured on site and run the production side of a construction company, bringing AI tools such as Claude Code into everyday professional work.',
+    'I understand architecture as a timeline: every building has to adapt to the present moment and its needs. That takes knowing our context deeply and being clear about our ideals of how one ought to live. And new construction is almost never the answer: the past is full of structures waiting for a role in the present. That is why the projects in this portfolio share one thread, reactivating what already exists, from the historic centres of mid-sized cities down to three pieces of furniture rescued from the bin.',
+    'I believe in hybridising extreme re-use, sustainability and renovation with the technology of the present and the future: an architecture ever closer to the human, that lets us live in complete synergy with our space, with the calm conscience of knowing it was made with the least possible impact.',
+    'I am ambitious: I want to make an impact and bring value in every kind of country, in contexts of poverty as much as in prosperous ones, always keeping my convictions.',
   ],
   ca: [
-    'Sóc estudiant de quart d’arquitectura a l’ETSAV (UPC), a Barcelona. Els projectes d’aquest portfoli comparteixen un fil: reactivar allò que ja existeix — dels centres històrics de les ciutats mitjanes a un edifici en desús, fins a tres mobles rescatats de les escombraries.',
-    'Treballo entre el dibuix, la maqueta i l’obra: he estat a peu d’obra i a la producció d’una constructora, integrant eines d’IA com Claude Code en el treball professional de cada dia.',
+    'Sóc estudiant de quart d’arquitectura a l’ETSAV (UPC), a Barcelona. Treballo entre el dibuix, la maqueta i l’obra: he estat a peu d’obra i a la producció d’una constructora, integrant eines d’IA com Claude Code en el treball professional de cada dia.',
+    'Entenc l’arquitectura com una línia temporal: cada edifici s’ha d’adaptar al moment present i a les seves necessitats. Per fer-ho cal conèixer a fons el context on som i tenir clars els ideals de com s’ha de viure. I gairebé mai no cal obra nova: el passat és ple d’estructures que esperen un paper en el present. Per això els projectes d’aquest portfoli comparteixen un fil, reactivar allò que ja existeix, dels centres històrics de les ciutats mitjanes fins a tres mobles rescatats de les escombraries.',
+    'Crec en la hibridació entre el re-ús extrem, la sostenibilitat i la reforma, incorporant-hi la tecnologia del present i del futur: una arquitectura cada cop més a la mida de l’humà, que ens deixi viure en sinergia completa amb l’espai, amb la consciència tranquil·la de saber que s’ha fet amb el mínim impacte possible.',
+    'Sóc ambiciós: vull crear impacte i aportar valor a tot tipus de països, tant en contextos de pobresa com en contextos benestants, mantenint sempre les meves conviccions.',
   ],
   es: [
-    'Soy estudiante de cuarto de arquitectura en la ETSAV (UPC), en Barcelona. Los proyectos de este portafolio comparten un hilo: reactivar lo que ya existe — de los centros históricos de las ciudades medianas a un edificio en desuso, hasta tres muebles rescatados de la basura.',
-    'Trabajo entre el dibujo, la maqueta y la obra: he estado a pie de obra y en la producción de una constructora, integrando herramientas de IA como Claude Code en el trabajo profesional de cada día.',
+    'Soy estudiante de cuarto de arquitectura en la ETSAV (UPC), en Barcelona. Trabajo entre el dibujo, la maqueta y la obra: he estado a pie de obra y en la producción de una constructora, integrando herramientas de IA como Claude Code en el trabajo profesional de cada día.',
+    'Entiendo la arquitectura como una línea temporal: cada edificio debe adaptarse al momento presente y a sus necesidades. Para hacerlo hay que conocer a fondo el contexto en el que estamos y tener claros los ideales de cómo se debe vivir. Y casi nunca hace falta obra nueva: el pasado está lleno de estructuras que esperan un papel en el presente. Por eso los proyectos de este portafolio comparten un hilo, reactivar lo que ya existe, de los centros históricos de las ciudades medianas hasta tres muebles rescatados de la basura.',
+    'Creo en la hibridación entre el reúso extremo, la sostenibilidad y la reforma, incorporando la tecnología del presente y del futuro: una arquitectura cada vez más a la medida de lo humano, que nos deje vivir en sinergia completa con el espacio, con la conciencia tranquila de saber que se ha hecho con el mínimo impacto posible.',
+    'Soy ambicioso: quiero crear impacto y aportar valor en todo tipo de países, tanto en contextos de pobreza como en contextos más acomodados, manteniendo siempre mis convicciones.',
   ],
 };
 

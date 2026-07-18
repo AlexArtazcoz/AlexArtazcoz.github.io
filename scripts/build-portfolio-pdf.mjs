@@ -22,7 +22,7 @@ import sharp from 'sharp';
 import QRCode from 'qrcode';
 import { PDFDocument, PDFName, PDFString, StandardFonts, rgb } from 'pdf-lib';
 import { projects } from '../src/data/projects.ts';
-import { site } from '../src/data/site.ts';
+import { site, bio } from '../src/data/site.ts';
 import { ui } from '../src/i18n/ui.ts';
 import { clampTrim, hasTrim } from '../src/data/frame.ts';
 
@@ -70,6 +70,7 @@ const safe = (s) =>
   s
     .replace(/ /g, ' ')
     .replace(/[–−]/g, '-')
+    .replace(/₂/g, '2') // Helvetica (WinAnsi) has no subscripts
     .replace(/…/g, '...');
 
 /** Greedy wrap by measured width. */
@@ -356,20 +357,30 @@ async function buildEdition(lang, qrPng) {
     }
   }
 
-  // ── Contact — and the loudest pointer to the website, QR included.
+  // ── Contact — the person first (bio), then the loudest pointer to the
+  // website, QR included.
   const back = doc.addPage([W, H]);
-  back.drawText(safe(T.info_contact), { x: M, y: H / 2 + 64, size: 11, font: fonts.bold, color: GREY });
-  back.drawText(site.email, { x: M, y: H / 2 + 32, size: 16, font: fonts.reg, color: INK });
-  addLink(doc, back, M, H / 2 + 28, fonts.reg.widthOfTextAtSize(site.email, 16), 20, `mailto:${site.email}`);
+  back.drawText(safe(site.name), { x: M, y: H - M - 16, size: 11, font: fonts.bold, color: INK });
+  let by = H - M - 44;
+  for (const para of bio[lang]) {
+    for (const line of wrap(para, fonts.reg, 9.5, 500)) {
+      back.drawText(line, { x: M, y: by, size: 9.5, font: fonts.reg, color: INK });
+      by -= 14;
+    }
+    by -= 7;
+  }
+  back.drawText(safe(T.info_contact), { x: M, y: 234, size: 11, font: fonts.bold, color: GREY });
+  back.drawText(site.email, { x: M, y: 206, size: 16, font: fonts.reg, color: INK });
+  addLink(doc, back, M, 202, fonts.reg.widthOfTextAtSize(site.email, 16), 20, `mailto:${site.email}`);
   for (const [i, line] of wrap(B.web_contact, fonts.reg, 9.5, 340).entries()) {
-    back.drawText(line, { x: M, y: H / 2 - 4 - i * 14, size: 9.5, font: fonts.reg, color: GREY });
+    back.drawText(line, { x: M, y: 170 - i * 14, size: 9.5, font: fonts.reg, color: GREY });
   }
   const backHome = displayUrl(homeUrl(lang));
-  back.drawText(backHome, { x: M, y: H / 2 - 34, size: 15, font: fonts.bold, color: INK });
-  addLink(doc, back, M, H / 2 - 38, fonts.bold.widthOfTextAtSize(backHome, 15), 19, homeUrl(lang));
+  back.drawText(backHome, { x: M, y: 140, size: 15, font: fonts.bold, color: INK });
+  addLink(doc, back, M, 136, fonts.bold.widthOfTextAtSize(backHome, 15), 19, homeUrl(lang));
   const qrSize = 96;
-  back.drawImage(qr, { x: W - M - qrSize, y: H / 2 - qrSize / 2, width: qrSize, height: qrSize });
-  addLink(doc, back, W - M - qrSize, H / 2 - qrSize / 2, qrSize, qrSize, homeUrl(lang));
+  back.drawImage(qr, { x: W - M - qrSize, y: 138, width: qrSize, height: qrSize });
+  addLink(doc, back, W - M - qrSize, 138, qrSize, qrSize, homeUrl(lang));
   back.drawText(safe(`${site.name} — ${site.role[lang]}, ${site.location}`), { x: M, y: M - 8, size: 9, font: fonts.reg, color: GREY });
 
   const bytes = await doc.save();
