@@ -4,7 +4,7 @@
  *
  *   public/og/default.png   — name + role card for the home/info pages
  *   public/og/<slug>.png    — per-project card: cover image + title + name
- *   public/apple-touch-icon.png, public/favicon.ico — from the AA monogram
+ *   public/apple-touch-icon.png, public/favicon.ico — from the single-A mark
  *
  * Re-run after changing a project's cover or title:  node scripts/build-og.mjs
  * (Text is set in Arial — visually adjacent to the site's Archivo — because
@@ -122,9 +122,9 @@ async function buildProjectCard(p) {
 async function buildDefaultCard() {
   const svg = Buffer.from(
     `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-      <g fill="none" stroke="${INK}" stroke-linecap="square" stroke-width="2" transform="translate(70,180) scale(3.4)">
-        <path d="M4 26 L11.5 6 L19 26"/><path d="M13 26 L20.5 6 L28 26"/>
-        <path d="M7.4 19.5 L24.6 19.5" stroke-width="1.5"/>
+      <g fill="none" stroke="${INK}" stroke-linecap="square" stroke-width="1.5" transform="translate(70,180) scale(3.4)">
+        <path d="M8 26 L16 6 L24 26"/>
+        <path d="M10.4 20 L21.6 20" stroke-width="1.25"/>
       </g>
       <text x="70" y="380" font-family="${FONT}" font-size="64" font-weight="700" fill="${INK}">${esc(site.name)}</text>
       <text x="70" y="428" font-family="${FONT}" font-size="28" fill="${GREY}">${esc(site.role.en)} — ${esc(site.location)}</text>
@@ -146,8 +146,8 @@ async function buildIcons() {
         <rect width="${size}" height="${size}" fill="#ffffff"/>
         <g fill="none" stroke="${INK}" stroke-linecap="square" stroke-width="${stroke}"
            transform="translate(${pad},${pad}) scale(${(size - 2 * pad) / 32})">
-          <path d="M4 26 L11.5 6 L19 26"/><path d="M13 26 L20.5 6 L28 26"/>
-          <path d="M7.4 19.5 L24.6 19.5" stroke-width="${stroke * 0.75}"/>
+          <path d="M8 26 L16 6 L24 26"/>
+          <path d="M10.4 20 L21.6 20" stroke-width="${stroke * 0.75}"/>
         </g>
       </svg>`,
     );

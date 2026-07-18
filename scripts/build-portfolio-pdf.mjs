@@ -230,9 +230,9 @@ async function buildEdition(lang, qrPng) {
 
   // ── Cover
   const cover = doc.addPage([W, H]);
-  const mono = ['M4 26 L11.5 6 L19 26', 'M13 26 L20.5 6 L28 26', 'M7.4 19.5 L24.6 19.5'];
+  const mono = ['M8 26 L16 6 L24 26', 'M10.4 20 L21.6 20'];
   for (const d of mono) {
-    cover.drawSvgPath(d, { x: M, y: H - M - 8, scale: 1.6, borderColor: INK, borderWidth: 1.6 });
+    cover.drawSvgPath(d, { x: M, y: H - M - 8, scale: 1.6, borderColor: INK, borderWidth: 1.3 });
   }
   cover.drawText(site.name, { x: M, y: H / 2 + 16, size: 40, font: fonts.bold, color: INK });
   cover.drawText(safe(`${site.role[lang]} — ${site.location}`), { x: M, y: H / 2 - 12, size: 13, font: fonts.reg, color: GREY });
