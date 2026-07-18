@@ -24,6 +24,7 @@ import { PDFDocument, PDFName, PDFString, StandardFonts, rgb } from 'pdf-lib';
 import { projects } from '../src/data/projects.ts';
 import { site } from '../src/data/site.ts';
 import { ui } from '../src/i18n/ui.ts';
+import { clampTrim, hasTrim } from '../src/data/frame.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ASSETS = path.join(root, 'src', 'assets');
@@ -118,7 +119,10 @@ function projectImages(p, max = 5) {
   const byStem = new Map(files.map((f) => [f.replace(/\.\w+$/, ''), path.join(dir, f)]));
   const saved = layout[p.slug] ?? {};
   const items = (saved.items ?? []).filter((i) => !i.hidden);
-  const cropByName = new Map(items.map((i) => [i.img, i.crop]));
+  // An image may sit on the canvas more than once (duplicates); the booklet
+  // uses the first placement's crop.
+  const cropByName = new Map();
+  for (const i of items) if (!cropByName.has(i.img)) cropByName.set(i.img, i.crop);
   const order = items.map((i) => i.img);
   const coverName = saved.cover ?? p.cover ?? order[0] ?? files[0]?.replace(/\.\w+$/, '');
   const chosen = (saved.picks ?? []).length ? saved.picks : order;
@@ -151,7 +155,8 @@ async function preparedJpgInner(entry) {
   const k = entryKey(entry);
   if (!jpgCache.has(k)) {
     let img = sharp(entry.file, { limitInputPixels: false });
-    const tr = entry.crop?.trim;
+    // Same invariant as the site renderer: any cut goes, ≥2% must survive.
+    const tr = hasTrim(entry.crop?.trim) ? clampTrim(entry.crop.trim) : null;
     if (tr && (tr.t || tr.r || tr.b || tr.l)) {
       const m = await img.metadata();
       const left = Math.floor(m.width * (tr.l ?? 0));
@@ -256,39 +261,51 @@ async function buildEdition(lang, qrPng) {
   for (const { p, images, firstPage } of plan) {
     const page = doc.addPage([W, H]);
 
-    // Text column
+    // Text column. Measure it first: if fitxa + concept + credits would reach
+    // the web link at the bottom, scale the type down so the page never
+    // overflows (long texts read smaller, they never get cut).
     const colW = 240;
-    let y = H - M - 20;
-    page.drawText(safe(p.title[lang]), { x: M, y, size: 20, font: fonts.bold, color: INK });
-    y -= 26;
     const fitxa = [
       [T.fitxa_program, p.type[lang]],
       [T.fitxa_location, p.location[lang]],
       [T.fitxa_year, p.year],
       [T.fitxa_studio, p.studio?.[lang] ?? ''],
     ].filter(([, v]) => v);
+    const fitxaLines = fitxa.flatMap(([l, v]) => wrap(`${l}: ${v}`, fonts.reg, 8.5, colW)).length;
+    const conceptLines = wrap(p.concept[lang], fonts.reg, 9.5, colW).length;
+    let creditLines = 0;
+    for (const c of p.credits ?? []) {
+      creditLines += 2 + wrap(c.names.join(', '), fonts.reg, 8.5, colW).length;
+    }
+    const needed = 26 + fitxaLines * 12.5 + 10 + conceptLines * 14 + creditLines * 12;
+    const avail = H - 2 * M - 20 - 44; // title top to just above the web link
+    const k = Math.min(1, Math.max(0.8, avail / needed));
+
+    let y = H - M - 20;
+    page.drawText(safe(p.title[lang]), { x: M, y, size: 20, font: fonts.bold, color: INK });
+    y -= 26;
     for (const [label, value] of fitxa) {
-      for (const line of wrap(`${label}: ${value}`, fonts.reg, 8.5, colW)) {
-        page.drawText(line, { x: M, y, size: 8.5, font: fonts.reg, color: GREY });
-        y -= 12.5;
+      for (const line of wrap(`${label}: ${value}`, fonts.reg, 8.5 * k, colW)) {
+        page.drawText(line, { x: M, y, size: 8.5 * k, font: fonts.reg, color: GREY });
+        y -= 12.5 * k;
       }
     }
     y -= 10;
-    for (const line of wrap(p.concept[lang], fonts.reg, 9.5, colW)) {
-      page.drawText(line, { x: M, y, size: 9.5, font: fonts.reg, color: INK, lineHeight: 14 });
-      y -= 14;
+    for (const line of wrap(p.concept[lang], fonts.reg, 9.5 * k, colW)) {
+      page.drawText(line, { x: M, y, size: 9.5 * k, font: fonts.reg, color: INK });
+      y -= 14 * k;
     }
 
     // Credits — the same quiet block the project page shows.
     for (const c of p.credits ?? []) {
-      y -= 12;
-      if (y < M + 70) break;
-      page.drawText(safe(c.label[lang]), { x: M, y, size: 8, font: fonts.bold, color: GREY });
-      y -= 12;
-      for (const line of wrap(c.names.join(', '), fonts.reg, 8.5, colW)) {
-        if (y < M + 58) break;
-        page.drawText(line, { x: M, y, size: 8.5, font: fonts.reg, color: GREY });
-        y -= 12;
+      y -= 12 * k;
+      if (y < M + 68) break;
+      page.drawText(safe(c.label[lang]), { x: M, y, size: 8 * k, font: fonts.bold, color: GREY });
+      y -= 12 * k;
+      for (const line of wrap(c.names.join(', '), fonts.reg, 8.5 * k, colW)) {
+        if (y < M + 56) break;
+        page.drawText(line, { x: M, y, size: 8.5 * k, font: fonts.reg, color: GREY });
+        y -= 12 * k;
       }
     }
 

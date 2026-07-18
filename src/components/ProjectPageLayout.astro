@@ -52,7 +52,7 @@ const schema = {
   lang={lang}
   path={path}
   title={`${site.name} — ${project.title[lang]}`}
-  description={project.concept[lang]}
+  description={project.concept[lang].split('\n\n')[0]}
   ogImage={`/og/${project.slug}.png`}
   schema={schema}
 >
@@ -84,7 +84,12 @@ const schema = {
           )
         }
 
-        {project.concept[lang] && <p class="pj__concept">{project.concept[lang]}</p>}
+        {
+          project.concept[lang] &&
+            project.concept[lang]
+              .split('\n\n')
+              .map((paragraph) => <p class="pj__concept">{paragraph}</p>)
+        }
       </header>
 
       <ProjectCanvas slug={project.slug} title={project.title[lang]} lang={lang} cover={project.cover} />
@@ -156,6 +161,10 @@ const schema = {
   .pj__concept {
     font-size: var(--fs-m);
     color: var(--ink-soft);
+  }
+
+  .pj__concept + .pj__concept {
+    margin-top: 0.8em;
   }
 
   /* Credits: a quiet block after the canvas, same voice as the fitxa. */
