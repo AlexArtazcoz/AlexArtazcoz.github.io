@@ -15,7 +15,9 @@
  * losslessly at any size.
  */
 
-/** Fractions cut from each edge of the source image (0–0.45). */
+/** Fractions cut from each edge of the source image. Any amount goes, as long
+ * as the pair of opposite edges leaves at least MIN_VISIBLE of the source —
+ * clampTrim() enforces that invariant wherever a trim enters the pipeline. */
 export interface Trim {
   t: number;
   r: number;
@@ -48,13 +50,38 @@ export const defaultCrop = (): Crop => ({
   trim: noTrim(),
 });
 
-export const MAX_TRIM = 0.45;
+/** Hard cap for a single edge (you can cut almost everything from one side). */
+export const MAX_TRIM = 0.98;
+/** Fraction of the source that must survive on each axis. */
+export const MIN_VISIBLE = 0.02;
 
 export const hasTrim = (t?: Trim): boolean =>
   !!t && (t.t > 0.0001 || t.r > 0.0001 || t.b > 0.0001 || t.l > 0.0001);
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
+
+/** Bring a stored trim inside the invariant: each edge within [0, MAX_TRIM]
+ * and each opposite pair scaled down, if needed, to leave MIN_VISIBLE. */
+export function clampTrim(tr?: Trim): Trim {
+  let l = clamp(tr?.l ?? 0, 0, MAX_TRIM);
+  let r = clamp(tr?.r ?? 0, 0, MAX_TRIM);
+  let t = clamp(tr?.t ?? 0, 0, MAX_TRIM);
+  let b = clamp(tr?.b ?? 0, 0, MAX_TRIM);
+  const w = l + r;
+  if (w > 1 - MIN_VISIBLE) {
+    const s = (1 - MIN_VISIBLE) / w;
+    l *= s;
+    r *= s;
+  }
+  const h = t + b;
+  if (h > 1 - MIN_VISIBLE) {
+    const s = (1 - MIN_VISIBLE) / h;
+    t *= s;
+    b *= s;
+  }
+  return { t, r, b, l };
+}
 
 export interface FrameGeometry {
   /** Frame aspect ratio (width / height). */
@@ -68,13 +95,9 @@ export const normRot = (rot?: number): number =>
   (((Math.round((rot ?? 0) / 90) * 90) % 360) + 360) % 360;
 
 export function frameGeometry(na: number, crop: Crop): FrameGeometry {
-  const tr = crop.trim ?? noTrim();
-  const l = clamp(tr.l ?? 0, 0, MAX_TRIM);
-  const r = clamp(tr.r ?? 0, 0, MAX_TRIM);
-  const t = clamp(tr.t ?? 0, 0, MAX_TRIM);
-  const b = clamp(tr.b ?? 0, 0, MAX_TRIM);
-  const vw = Math.max(0.1, 1 - l - r); // visible fraction of the source
-  const vh = Math.max(0.1, 1 - t - b);
+  const { t, r, b, l } = clampTrim(crop.trim);
+  const vw = Math.max(MIN_VISIBLE, 1 - l - r); // visible fraction of the source
+  const vh = Math.max(MIN_VISIBLE, 1 - t - b);
 
   const ta = na * (vw / vh); // aspect of the trimmed source
   const rot = normRot(crop.rot);
@@ -142,13 +165,9 @@ export interface ViewerFrame {
  * the (trimmed, rotated) source is visible inside the frame right now.
  */
 export function viewerFrame(na: number, crop: Crop): ViewerFrame {
-  const tr = crop.trim ?? noTrim();
-  const l = clamp(tr.l ?? 0, 0, MAX_TRIM);
-  const r = clamp(tr.r ?? 0, 0, MAX_TRIM);
-  const t = clamp(tr.t ?? 0, 0, MAX_TRIM);
-  const b = clamp(tr.b ?? 0, 0, MAX_TRIM);
-  const vw = Math.max(0.1, 1 - l - r);
-  const vh = Math.max(0.1, 1 - t - b);
+  const { t, r, b, l } = clampTrim(crop.trim);
+  const vw = Math.max(MIN_VISIBLE, 1 - l - r);
+  const vh = Math.max(MIN_VISIBLE, 1 - t - b);
 
   const ta = na * (vw / vh);
   const rot = normRot(crop.rot);

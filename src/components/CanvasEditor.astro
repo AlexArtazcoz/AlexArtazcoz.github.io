@@ -68,16 +68,16 @@
   <div class="ed-grp ed-trim">
     <span class="ed-lbl">Vores</span>
     <label title="Retallar per dalt"
-      >▲<input type="range" data-trim="t" min="0" max="40" step="0.5" value="0" /></label
+      >▲<input type="range" data-trim="t" min="0" max="95" step="0.5" value="0" /></label
     >
     <label title="Retallar per baix"
-      >▼<input type="range" data-trim="b" min="0" max="40" step="0.5" value="0" /></label
+      >▼<input type="range" data-trim="b" min="0" max="95" step="0.5" value="0" /></label
     >
     <label title="Retallar per l’esquerra"
-      >◀<input type="range" data-trim="l" min="0" max="40" step="0.5" value="0" /></label
+      >◀<input type="range" data-trim="l" min="0" max="95" step="0.5" value="0" /></label
     >
     <label title="Retallar per la dreta"
-      >▶<input type="range" data-trim="r" min="0" max="40" step="0.5" value="0" /></label
+      >▶<input type="range" data-trim="r" min="0" max="95" step="0.5" value="0" /></label
     >
     <button type="button" data-ed="trim-reset" title="Treure el retall de vores">↺</button>
   </div>
@@ -86,6 +86,7 @@
     <button type="button" data-ed="pan">Reenquadrar</button>
     <button type="button" data-ed="cover">★ Portada</button>
     <button type="button" data-ed="pick" title="Fins a 4 imatges: passi del ratolí a la portada i pàgines del portfoli PDF">◈ Selecció</button>
+    <button type="button" data-ed="duplicate" title="Duplicar la selecció al llenç">Duplicar</button>
     <button type="button" data-ed="reset" title="Reiniciar vores, gir, forma i zoom">Reiniciar</button>
     <button type="button" data-ed="delete" class="ed-danger">Eliminar</button>
   </div>
@@ -290,6 +291,54 @@
     display: block;
   }
 
+  /* Edge-trim handles: grab any side of the image and cut it inward. */
+  :global(.ed-edge) {
+    position: absolute;
+    background: #1a6dff;
+    border: 1px solid #fff;
+    border-radius: 4px;
+    display: none;
+    z-index: 5;
+  }
+
+  :global(.ed-edge[data-edge='t']),
+  :global(.ed-edge[data-edge='b']) {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 34px;
+    height: 8px;
+    cursor: ns-resize;
+  }
+
+  :global(.ed-edge[data-edge='t']) {
+    top: -4px;
+  }
+
+  :global(.ed-edge[data-edge='b']) {
+    bottom: -4px;
+  }
+
+  :global(.ed-edge[data-edge='l']),
+  :global(.ed-edge[data-edge='r']) {
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 34px;
+    cursor: ew-resize;
+  }
+
+  :global(.ed-edge[data-edge='l']) {
+    left: -4px;
+  }
+
+  :global(.ed-edge[data-edge='r']) {
+    right: -4px;
+  }
+
+  :global(body.ed-on .canvas__item.ed-solo .ed-edge) {
+    display: block;
+  }
+
   /* Rubber band drawn while sweeping the empty canvas to select a pack. */
   :global(.ed-band) {
     position: absolute;
@@ -323,7 +372,16 @@
 </style>
 
 <script>
-  import { frameGeometry, defaultCrop, noTrim, hasTrim, normRot, type Crop } from '../data/frame';
+  import {
+    frameGeometry,
+    defaultCrop,
+    noTrim,
+    hasTrim,
+    normRot,
+    MIN_VISIBLE,
+    type Crop,
+    type Trim,
+  } from '../data/frame';
 
   // Dev-only, and only on this machine: refuses to run off localhost so a
   // shared/published portfolio can never expose editing to anyone else.
@@ -395,19 +453,19 @@
         items: Omit<Item, 'el'>[];
       };
       const items: Item[] = [];
-      for (const m of model.items) {
-        const el = stage.querySelector<HTMLElement>(
-          `.canvas__item[data-img="${CSS.escape(m.img)}"]`,
-        );
-        if (!el) continue;
+      // Model order and DOM order are the same render loop, so items bind by
+      // index — the only mapping that stays correct when an image appears on
+      // the canvas more than once (duplicates share their data-img).
+      const els = Array.from(stage.querySelectorAll<HTMLElement>('.canvas__item'));
+      model.items.forEach((m, idx) => {
+        const el = els[idx];
+        if (!el) return;
         // Fill in any crop fields older saved layouts don't have.
         const item = { ...m, crop: { ...defaultCrop(), ...m.crop }, el } as Item;
-        const handle = document.createElement('div');
-        handle.className = 'ed-handle';
-        el.appendChild(handle);
+        dressItem(el);
         el.addEventListener('pointerdown', (e) => onDown(e, slug, item));
         items.push(item);
-      }
+      });
       stage.addEventListener('pointerdown', (e) => onStageDown(e, slug));
       const gv = document.createElement('div');
       gv.className = 'ed-guide ed-guide--v';
@@ -430,6 +488,20 @@
       refreshCoverBadge(slug);
       refreshPickBadges(slug);
     });
+
+    /** Attach the editing chrome an item needs: the corner resize handle and
+     * one trim handle per edge. */
+    function dressItem(el: HTMLElement) {
+      const handle = document.createElement('div');
+      handle.className = 'ed-handle';
+      el.appendChild(handle);
+      for (const edge of ['t', 'r', 'b', 'l'] as const) {
+        const h = document.createElement('div');
+        h.className = 'ed-edge';
+        h.dataset.edge = edge;
+        el.appendChild(h);
+      }
+    }
 
     function refreshCoverBadge(slug: string) {
       const st = state[slug];
@@ -674,9 +746,10 @@
       const sx = e.clientX;
       const sy = e.clientY;
       const isHandle = !!(e.target as HTMLElement).closest('.ed-handle');
-      const mode = isHandle ? 'resize' : panning ? 'pan' : 'move';
-      // Only moving is a pack operation: resizing and reframing act on the
-      // single image under the pointer.
+      const edgeEl = (e.target as HTMLElement).closest('.ed-edge') as HTMLElement | null;
+      const mode = edgeEl ? 'trim' : isHandle ? 'resize' : panning ? 'pan' : 'move';
+      // Only moving is a pack operation: resizing, trimming and reframing act
+      // on the single image under the pointer.
       const group = mode === 'move' ? selectionOn(slug).slice() : [it];
       const orig = group.map((g) => ({ it: g, x: g.x, y: g.y }));
       const origW = it.w;
@@ -684,6 +757,25 @@
       const box = groupBox(group);
       const targets = snapTargets(slug, new Set(group));
       if (mode !== 'pan') group.forEach((g) => g.el.classList.add('ed-lift'));
+
+      // Trim by edge: everything is measured against the drag's starting
+      // state, so the mapping stays stable while the frame reshapes live.
+      // The grabbed handle is a VISUAL edge; the quarter-turn decides which
+      // SOURCE edge it cuts (rotate 90° cw → the source's left edge is on top).
+      const visualEdge = (edgeEl?.dataset.edge ?? 't') as keyof Trim;
+      const EDGE_BY_ROT: Record<number, Record<keyof Trim, keyof Trim>> = {
+        0: { t: 't', r: 'r', b: 'b', l: 'l' },
+        90: { t: 'l', r: 't', b: 'r', l: 'b' },
+        180: { t: 'b', r: 'l', b: 't', l: 'r' },
+        270: { t: 'r', r: 'b', b: 'l', l: 't' },
+      };
+      const srcEdge = EDGE_BY_ROT[normRot(it.crop.rot)][visualEdge];
+      const OPPOSITE: Record<keyof Trim, keyof Trim> = { t: 'b', b: 't', l: 'r', r: 'l' };
+      const trim0: Trim = { ...noTrim(), ...it.crop.trim };
+      const frame0 = (it.el.querySelector('.canvas__frame') as HTMLElement).getBoundingClientRect();
+      // Fraction of the source still visible along the axis being cut.
+      const visible0 =
+        srcEdge === 'l' || srcEdge === 'r' ? 1 - trim0.l - trim0.r : 1 - trim0.t - trim0.b;
 
       const move = (ev: PointerEvent) => {
         const dxu = (ev.clientX - sx) / perUnit;
@@ -718,6 +810,18 @@
             vline = sw.line;
           }
           it.w = Math.min(nw, CANVAS_W - it.x);
+        } else if (mode === 'trim') {
+          // Pointer travel, as a fraction of the frame at drag start, scaled
+          // by how much source was visible then — dragging inward cuts.
+          const vertical = visualEdge === 't' || visualEdge === 'b';
+          const travel = vertical ? ev.clientY - sy : ev.clientX - sx;
+          const inward = visualEdge === 't' || visualEdge === 'l' ? travel : -travel;
+          const framePx = vertical ? frame0.height : frame0.width;
+          const delta = (inward / Math.max(1, framePx)) * visible0;
+          const maxEdge = 1 - MIN_VISIBLE - (trim0[OPPOSITE[srcEdge]] ?? 0);
+          const v = clamp(trim0[srcEdge] + delta, 0, maxEdge);
+          it.crop.trim = { ...trim0, [srcEdge]: Math.round(v * 1000) / 1000 };
+          status(`Retall: ${(v * 100).toFixed(1)}%`);
         } else {
           const r = it.el.getBoundingClientRect();
           it.crop.fx = clamp(origF.fx - ((ev.clientX - sx) / r.width) * 100, 0, 100);
@@ -733,6 +837,7 @@
         hideGuides(slug);
         group.forEach((g) => g.el.classList.remove('ed-lift'));
         if (mode !== 'pan') resolveOverlaps(slug, group); // insertion: others make room
+        if (mode === 'trim') syncPanel(it); // sliders mirror the new cut
         document.removeEventListener('pointermove', move);
         document.removeEventListener('pointerup', up);
       };
@@ -1028,12 +1133,16 @@
     zoomInput.addEventListener('input', () => edit((it) => (it.crop.zoom = parseFloat(zoomInput.value)), false));
 
     // Trim: live preview while dragging, reflow once the slider is released.
+    // Each edge is free up to its opposite: together they must leave
+    // MIN_VISIBLE of the source, the same invariant clampTrim enforces.
     panel.querySelectorAll<HTMLInputElement>('[data-trim]').forEach((i) => {
-      const edge = i.dataset.trim as 't' | 'r' | 'b' | 'l';
+      const edge = i.dataset.trim as keyof Trim;
+      const opposite: Record<keyof Trim, keyof Trim> = { t: 'b', b: 't', l: 'r', r: 'l' };
       const set = (reflow: boolean) =>
         edit((it) => {
           it.crop.trim = { ...noTrim(), ...it.crop.trim };
-          it.crop.trim[edge] = parseFloat(i.value) / 100;
+          const cap = 1 - MIN_VISIBLE - (it.crop.trim[opposite[edge]] ?? 0);
+          it.crop.trim[edge] = clamp(parseFloat(i.value) / 100, 0, cap);
         }, reflow);
       i.addEventListener('input', () => set(false));
       i.addEventListener('change', () => set(true));
@@ -1081,14 +1190,54 @@
       );
     });
 
+    // Duplicate the pack: same image, same crop, nudged one gap away so the
+    // copies land visibly as a new layer — then they become the selection.
+    (panel.querySelector('[data-ed="duplicate"]') as HTMLButtonElement).addEventListener('click', () => {
+      if (!sel) return;
+      const { slug, items } = sel;
+      const st = state[slug];
+      let z = Math.max(0, ...st.items.map((i) => i.z));
+      const clones: Item[] = [];
+      for (const it of items) {
+        const el = it.el.cloneNode(true) as HTMLElement;
+        el.classList.remove('ed-sel', 'ed-solo', 'ed-cover', 'ed-lift');
+        delete el.dataset.edPick;
+        const clone: Item = {
+          img: it.img,
+          x: clamp(it.x + GAP, 0, CANVAS_W - it.w),
+          y: it.y + GAP,
+          w: it.w,
+          z: ++z,
+          crop: structuredClone(it.crop),
+          na: it.na,
+          el,
+        };
+        el.addEventListener('pointerdown', (ev) => onDown(ev, slug, clone));
+        st.stage.appendChild(el);
+        st.items.push(clone);
+        clones.push(clone);
+        applyItem(slug, clone);
+        grow(slug, clone);
+      }
+      setSelection(slug, clones);
+      resolveOverlaps(slug, clones);
+      refreshCoverBadge(slug);
+      refreshPickBadges(slug);
+      status(
+        (clones.length > 1 ? clones.length + ' imatges duplicades' : 'Imatge duplicada') +
+          ' — mou-la on vulguis i recorda Desar.',
+      );
+    });
+
     deleteBtn.addEventListener('click', () => {
       if (!sel) return;
       const { slug, items } = sel;
       const st = state[slug];
       const gone = new Set(items);
       st.items = st.items.filter((i) => !gone.has(i));
-      if (st.cover && items.some((i) => i.img === st.cover)) st.cover = null;
-      st.picks = st.picks.filter((n) => !items.some((i) => i.img === n));
+      // Cover/picks are per image name: keep them while any copy remains.
+      if (st.cover && !st.items.some((i) => i.img === st.cover)) st.cover = null;
+      st.picks = st.picks.filter((n) => st.items.some((i) => i.img === n));
       items.forEach((i) => i.el.remove());
       const n = items.length;
       deselect();
