@@ -230,7 +230,7 @@ async function buildEdition(lang, qrPng) {
 
   // ── Cover
   const cover = doc.addPage([W, H]);
-  const mono = ['M8 26 L16 6 L24 26', 'M10.4 20 L21.6 20'];
+  const mono = ['M8 26 L16 6 L24 26', 'M10.4 20 L24 26'];
   for (const d of mono) {
     cover.drawSvgPath(d, { x: M, y: H - M - 8, scale: 1.6, borderColor: INK, borderWidth: 1.3 });
   }

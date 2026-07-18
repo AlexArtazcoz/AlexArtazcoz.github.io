@@ -1,8 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Alex Artazcoz">
-  <!-- A single quiet A, drawn as thin plan-like linework. -->
+  <!-- A single quiet A in thin linework; the bar runs diagonally, from the
+       right foot up to the left leg. -->
   <g fill="none" stroke-linecap="square" stroke-width="1.5">
     <path d="M8 26 L16 6 L24 26" />
-    <path d="M10.4 20 L21.6 20" stroke-width="1.25" />
+    <path d="M10.4 20 L24 26" stroke-width="1.25" />
   </g>
   <style>
     g { stroke: #141414; }

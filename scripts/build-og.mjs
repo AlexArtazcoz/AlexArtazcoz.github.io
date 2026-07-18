@@ -124,7 +124,7 @@ async function buildDefaultCard() {
     `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
       <g fill="none" stroke="${INK}" stroke-linecap="square" stroke-width="1.5" transform="translate(70,180) scale(3.4)">
         <path d="M8 26 L16 6 L24 26"/>
-        <path d="M10.4 20 L21.6 20" stroke-width="1.25"/>
+        <path d="M10.4 20 L24 26" stroke-width="1.25"/>
       </g>
       <text x="70" y="380" font-family="${FONT}" font-size="64" font-weight="700" fill="${INK}">${esc(site.name)}</text>
       <text x="70" y="428" font-family="${FONT}" font-size="28" fill="${GREY}">${esc(site.role.en)} — ${esc(site.location)}</text>
@@ -147,7 +147,7 @@ async function buildIcons() {
         <g fill="none" stroke="${INK}" stroke-linecap="square" stroke-width="${stroke}"
            transform="translate(${pad},${pad}) scale(${(size - 2 * pad) / 32})">
           <path d="M8 26 L16 6 L24 26"/>
-          <path d="M10.4 20 L21.6 20" stroke-width="${stroke * 0.75}"/>
+          <path d="M10.4 20 L24 26" stroke-width="${stroke * 0.75}"/>
         </g>
       </svg>`,
     );
