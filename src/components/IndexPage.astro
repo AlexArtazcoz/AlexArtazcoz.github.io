@@ -154,16 +154,16 @@ const cards = projects.map((p, i) => {
     max-width: none;
     filter: grayscale(1);
     transition:
-      filter 0.35s ease,
-      transform 1.2s var(--ease-soft);
+      filter 0.5s ease,
+      transform 3.2s var(--ease-soft);
   }
 
-  /* Colour returns and the image grows slightly past its standard, slow
-     enough to feel like light changing — visible on the small cards too. */
+  /* Colour returns, and the image comes forward — very slowly, on every
+     work: a long drift you notice happening rather than see finish. */
   .card:hover .card__frame :global(img),
   .card:focus-visible .card__frame :global(img) {
     filter: grayscale(0);
-    transform: scale(1.04);
+    transform: scale(1.06);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -184,6 +184,15 @@ const cards = projects.map((p, i) => {
 
   .card:hover .card__title {
     color: var(--ink);
+  }
+
+  /* On desktop the grid is silent: no captions — the trailing black dot
+     carries each project's title when it passes over. Touch screens keep
+     the captions (they have no pointer to name things with). */
+  @media (hover: hover) and (pointer: fine) {
+    .card__title {
+      display: none;
+    }
   }
 
   /* Featured project: full row, panoramic frame, slightly larger title. */

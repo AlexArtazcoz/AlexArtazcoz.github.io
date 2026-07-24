@@ -120,9 +120,9 @@
     });
 
     const trail = () => {
-      // A touch of lag: the dot drifts after the cursor, never with it.
-      x += (targetX - x) * 0.14;
-      y += (targetY - y) * 0.14;
+      // Pronounced lag: the dot clearly drifts behind, arriving late on purpose.
+      x += (targetX - x) * 0.07;
+      y += (targetY - y) * 0.07;
       const cur = el();
       if (cur) cur.style.transform = `translate3d(${x}px, ${y}px, 0)`;
       requestAnimationFrame(trail);
