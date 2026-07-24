@@ -1,0 +1,55 @@
+---
+/**
+ * Custom 404 — GitHub Pages serves this single page for every missing URL,
+ * whatever the language, so the copy carries all three and points home.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import { site } from '../data/site';
+---
+
+<BaseLayout lang="en" path="404" title={`${site.name} — 404`} description="Page not found.">
+  <SiteHeader lang="en" path="" active="work" />
+
+  <main id="main" class="container">
+    <div class="nf">
+      <h1 class="nf__code">404</h1>
+      <p class="nf__line">
+        Aquesta pàgina no existeix. <a href="/ca/">Torna a l’obra</a>.
+      </p>
+      <p class="nf__line">This page does not exist. <a href="/">Back to the work</a>.</p>
+      <p class="nf__line">Esta página no existe. <a href="/es/">Vuelve a la obra</a>.</p>
+    </div>
+  </main>
+
+  <SiteFooter lang="en" />
+</BaseLayout>
+
+<style>
+  .nf {
+    max-width: var(--measure);
+    padding-block: 4rem 2rem;
+  }
+
+  .nf__code {
+    font-size: var(--fs-l);
+    font-weight: 500;
+    margin-bottom: 1.1rem;
+    color: var(--grey);
+  }
+
+  .nf__line {
+    font-size: var(--fs-m);
+    color: var(--ink-soft);
+  }
+
+  .nf__line + .nf__line {
+    margin-top: 0.5em;
+  }
+
+  .nf__line a {
+    color: inherit;
+    text-underline-offset: 3px;
+  }
+</style>

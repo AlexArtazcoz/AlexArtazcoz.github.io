@@ -14,12 +14,19 @@ interface Props {
 }
 
 const { lang } = Astro.props;
+
+const description: Record<Lang, string> = {
+  en: 'About Alex Artazcoz, architecture student at ETSAV (UPC), Barcelona: bio, education, skills, contact, CV and PDF portfolio.',
+  ca: 'Sobre Alex Artazcoz, estudiant d’arquitectura a l’ETSAV (UPC), Barcelona: bio, formació, competències, contacte, CV i portfoli en PDF.',
+  es: 'Sobre Alex Artazcoz, estudiante de arquitectura en la ETSAV (UPC), Barcelona: bio, formación, competencias, contacto, CV y portafolio en PDF.',
+};
 ---
 
-<BaseLayout lang={lang} path="info/" title={`${site.name} — info`}>
+<BaseLayout lang={lang} path="info/" title={`${site.name} — info`} description={description[lang]}>
   <SiteHeader lang={lang} path="info/" active="info" />
 
   <main id="main" class="container">
+    <h1 class="visually-hidden">{site.name} — info</h1>
     <div class="info">
       <section class="info__bio">
         {bio[lang].map((paragraph) => <p>{paragraph}</p>)}
@@ -91,7 +98,7 @@ const { lang } = Astro.props;
     </div>
   </main>
 
-  <SiteFooter />
+  <SiteFooter lang={lang} />
 </BaseLayout>
 
 <style>

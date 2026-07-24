@@ -14,6 +14,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteHeader from './SiteHeader.astro';
 import SiteFooter from './SiteFooter.astro';
 import { projects } from '../data/projects';
+import { site } from '../data/site';
 import { coverFor } from '../data/layout';
 import { frameGeometry, srcStyle, imgStyle, normRot } from '../data/frame';
 import type { Lang } from '../i18n/ui';
@@ -56,6 +57,7 @@ const cards = projects.map((p, i) => {
   <SiteHeader lang={lang} path="" active="work" />
 
   <main id="main" class="container">
+    <h1 class="visually-hidden">{site.name} — portfolio</h1>
     <ul class="grid">
       {
         cards.map(({ p, cover, g, featured }) => (
@@ -71,6 +73,7 @@ const cards = projects.map((p, i) => {
                     <Image
                       src={cover.src}
                       alt={p.title[lang]}
+                      width={Math.min(featured ? 2000 : 1400, cover.src.width)}
                       widths={candidates.filter((w) => w <= cover.src.width)}
                       sizes={featured ? '92vw' : '(min-width: 60rem) 30vw, (min-width: 40rem) 45vw, 100vw'}
                       loading={featured ? 'eager' : 'lazy'}
@@ -93,7 +96,7 @@ const cards = projects.map((p, i) => {
     </ul>
   </main>
 
-  <SiteFooter />
+  <SiteFooter lang={lang} />
 </BaseLayout>
 
 <style>

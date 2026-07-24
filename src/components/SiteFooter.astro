@@ -1,14 +1,25 @@
 ---
 /**
- * Minimal footer: © year + name, in the smallest quiet type.
+ * Minimal footer: © year + name, plus the two ways to reach me — contact is
+ * one click away from any page, not only from info.
  */
 import { site } from '../data/site';
+import { t, type Lang } from '../i18n/ui';
 
+interface Props {
+  lang?: Lang;
+}
+
+const { lang = 'en' } = Astro.props;
 const year = new Date().getFullYear();
+const infoHref = `${lang === 'en' ? '' : `/${lang}`}/info/`;
 ---
 
 <footer class="ft container">
-  <p>© {year} {site.name}</p>
+  <p>
+    © {year} {site.name} · <a href={`mailto:${site.email}`}>{site.email}</a> ·
+    <a href={infoHref}>{t(lang, 'nav_info')}</a>
+  </p>
 </footer>
 
 <style>
@@ -16,5 +27,10 @@ const year = new Date().getFullYear();
     padding-block: 4rem 1.6rem;
     font-size: var(--fs-xs);
     color: var(--grey);
+  }
+
+  .ft a {
+    color: inherit;
+    text-underline-offset: 3px;
   }
 </style>

@@ -26,6 +26,13 @@ const canvas = renderCanvas(slug);
 // Large steps included so retina screens get crisp linework on the canvas.
 const candidates = [400, 800, 1200, 1600, 2000, 2600, 3200];
 
+/** Each image gets its own alt, derived from the filename stem — a page of
+ * twenty images must not read as the project title twenty times. */
+const altFor = (img: string) => {
+  const words = img.replace(/^\d+[-_]?/, '').replace(/[-_]+/g, ' ').trim();
+  return words ? `${title} · ${words}` : title;
+};
+
 // The canvas item that acts as the project's cover (same resolution order as
 // coverFor in data/layout.ts) — it morphs from the index card on navigation.
 const coverName = canvas.cover ?? cover ?? canvas.items[0]?.img;
@@ -84,7 +91,8 @@ const editorModel = {
           <div class="canvas__src" style={srcStyle(g)}>
             <Image
               src={it.src}
-              alt={title}
+              alt={altFor(it.img)}
+              width={Math.min(2000, it.src.width)}
               widths={widths.length ? widths : [it.src.width]}
               sizes={`${Math.max(10, Math.round(width))}vw`}
               quality={90}

@@ -35,6 +35,14 @@ const fitxa = [
   { label: t(lang, 'fitxa_studio'), value: project.studio?.[lang] ?? '' },
 ].filter((f) => f.value);
 
+/** Search snippets truncate around 160 characters — cut at a word boundary
+ * so the description never arrives half-swallowed. */
+const firstParagraph = project.concept[lang].split('\n\n')[0];
+const metaDescription =
+  firstParagraph.length <= 158
+    ? firstParagraph
+    : `${firstParagraph.slice(0, 158).replace(/\s+\S*$/, '')}…`;
+
 /** Structured data so the project shows up properly in search results. */
 const schema = {
   '@context': 'https://schema.org',
@@ -52,7 +60,7 @@ const schema = {
   lang={lang}
   path={path}
   title={`${site.name} — ${project.title[lang]}`}
-  description={project.concept[lang].split('\n\n')[0]}
+  description={metaDescription}
   ogImage={`/og/${project.slug}.png`}
   schema={schema}
 >
@@ -121,7 +129,7 @@ const schema = {
     </div>
   </main>
 
-  <SiteFooter />
+  <SiteFooter lang={lang} />
 
   <PlanViewer lang={lang} />
 
