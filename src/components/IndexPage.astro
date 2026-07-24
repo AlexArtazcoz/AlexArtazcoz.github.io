@@ -122,6 +122,15 @@ const cards = projects.map((p, i) => {
     }
   }
 
+  .grid li {
+    position: relative;
+  }
+
+  /* The hovered work floats over its neighbours while it grows. */
+  .grid li:hover {
+    z-index: 2;
+  }
+
   .card {
     display: block;
   }
@@ -136,6 +145,21 @@ const cards = projects.map((p, i) => {
     aspect-ratio: 3 / 2;
     overflow: hidden;
     background: #f4f4f2;
+    transition: transform 3.2s var(--ease-soft);
+  }
+
+  /* On hover the WHOLE framed image zooms as one piece, slowly growing past
+     its own margins over the grid — no internal crop, no lean. */
+  .card:hover .card__frame,
+  .card:focus-visible .card__frame {
+    transform: scale(1.05);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card:hover .card__frame,
+    .card:focus-visible .card__frame {
+      transform: none;
+    }
   }
 
   /* The trimmed source box: cover-sized then rotated (see data/frame.ts). */
@@ -149,10 +173,9 @@ const cards = projects.map((p, i) => {
   /* Sized/offset by the frame engine; max-width must be released because the
      global reset caps images at 100%. Colour returns on hover. */
   /* .grid prefix: this must out-rank the global lazy-image fade rule, which
-     also sets `transition` — without it, lazy cards lose the transform
-     transition and the hover drift snaps instead of drifting (the eager
-     featured card was the only one that worked). Opacity is carried along
-     so the load fade still happens here too. */
+     also sets `transition` — without it, lazy cards would lose their colour
+     transition (the eager featured card was the only one unaffected).
+     Opacity is carried along so the load fade still happens here too. */
   .grid .card__frame :global(img) {
     position: absolute;
     display: block;
@@ -160,23 +183,13 @@ const cards = projects.map((p, i) => {
     filter: grayscale(1);
     transition:
       opacity 0.6s var(--ease-soft),
-      filter 0.5s ease,
-      transform 3.2s var(--ease-soft);
+      filter 0.5s ease;
   }
 
-  /* Colour returns, and the image comes forward — very slowly, on every
-     work: a long drift you notice happening rather than see finish. */
+  /* Colour returns while the frame grows. */
   .card:hover .card__frame :global(img),
   .card:focus-visible .card__frame :global(img) {
     filter: grayscale(0);
-    transform: scale(1.06);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .card:hover .card__frame :global(img),
-    .card:focus-visible .card__frame :global(img) {
-      transform: none;
-    }
   }
 
   /* Quiet caption: small and grey, taking ink only when the card is hovered. */
