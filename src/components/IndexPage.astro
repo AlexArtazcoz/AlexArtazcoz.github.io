@@ -31,6 +31,15 @@ const CARD_ASPECT = 3 / 2;
 const FEATURED_ASPECT = 12 / 5;
 const candidates = [400, 700, 1000, 1400, 2000];
 
+/** Where a work comes from, as a terse corner tag: the studio number when
+ * there is one (TAP VI … TAP I), RAP for the drawing course, UPC for the
+ * research. */
+const tagFor = (p: (typeof projects)[number]): string => {
+  const studio = p.type.en.match(/studio\s+([IVX]+)/i);
+  if (studio) return `TAP ${studio[1]}`;
+  return p.slug === 'rap' ? 'RAP' : 'UPC';
+};
+
 const cards = projects.map((p, i) => {
   const cover = coverFor(p.slug, p.cover);
   const featured = i === 0;
@@ -62,11 +71,7 @@ const cards = projects.map((p, i) => {
       {
         cards.map(({ p, cover, g, featured }) => (
           <li class:list={{ feat: featured }}>
-            <a
-              class="card"
-              href={`${lang === 'en' ? '' : `/${lang}`}/projects/${p.slug}/`}
-              data-cursor-label={p.title[lang]}
-            >
+            <a class="card" href={`${lang === 'en' ? '' : `/${lang}`}/projects/${p.slug}/`}>
               <span
                 class="card__frame"
                 transition:name={`cover-${p.slug}`}
@@ -85,6 +90,10 @@ const cards = projects.map((p, i) => {
                     />
                   </span>
                 )}
+              </span>
+              <span class="card__meta" aria-hidden="true">
+                <span class="card__meta-title">{p.title[lang]}</span>
+                <span class="card__meta-tag">{tagFor(p)}</span>
               </span>
               <span
                 class="card__title"
@@ -133,6 +142,61 @@ const cards = projects.map((p, i) => {
 
   .card {
     display: block;
+    position: relative;
+  }
+
+  /* On hover the work names itself inside the image: title in one corner,
+     where it comes from in the other. White pads guarantee contrast on any
+     drawing or photograph. Sits outside the morphing frame so the cover
+     glide to the project page stays clean. */
+  .card__meta {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  .card:hover .card__meta,
+  .card:focus-visible .card__meta {
+    opacity: 1;
+  }
+
+  .card__meta-title,
+  .card__meta-tag {
+    position: absolute;
+    font-size: var(--fs-xs);
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.92);
+    padding: 0.15rem 0.55rem;
+    transition: transform 0.6s var(--ease-land);
+  }
+
+  .card__meta-title {
+    left: 0.55rem;
+    bottom: 0.55rem;
+    transform: translateY(5px);
+  }
+
+  .card__meta-tag {
+    right: 0.55rem;
+    top: 0.55rem;
+    transform: translateY(-5px);
+  }
+
+  .card:hover .card__meta-title,
+  .card:hover .card__meta-tag,
+  .card:focus-visible .card__meta-title,
+  .card:focus-visible .card__meta-tag {
+    transform: none;
+  }
+
+  /* No hover, no overlay: touch screens keep the caption below instead. */
+  @media (hover: none), (pointer: coarse) {
+    .card__meta {
+      display: none;
+    }
   }
 
   .card:hover {
