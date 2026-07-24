@@ -148,12 +148,18 @@ const cards = projects.map((p, i) => {
 
   /* Sized/offset by the frame engine; max-width must be released because the
      global reset caps images at 100%. Colour returns on hover. */
-  .card__frame :global(img) {
+  /* .grid prefix: this must out-rank the global lazy-image fade rule, which
+     also sets `transition` — without it, lazy cards lose the transform
+     transition and the hover drift snaps instead of drifting (the eager
+     featured card was the only one that worked). Opacity is carried along
+     so the load fade still happens here too. */
+  .grid .card__frame :global(img) {
     position: absolute;
     display: block;
     max-width: none;
     filter: grayscale(1);
     transition:
+      opacity 0.6s var(--ease-soft),
       filter 0.5s ease,
       transform 3.2s var(--ease-soft);
   }
