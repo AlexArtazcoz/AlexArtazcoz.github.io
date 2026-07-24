@@ -51,6 +51,13 @@ const personSchema = {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
 
+    <!-- Marks the document before first paint: the motion layer in global.css
+         (image fades, scroll reveals) only ever hides content behind html.js,
+         so a visitor without JS gets the page plainly visible. -->
+    <script is:inline>
+      document.documentElement.classList.add('js');
+    </script>
+
     <title>{pageTitle}</title>
     <meta name="description" content={pageDescription} />
     <meta name="theme-color" content="#ffffff" />
@@ -97,5 +104,37 @@ const personSchema = {
   <body>
     <a class="skip-link" href="#main">{t(lang, 'skip')}</a>
     <slot />
+
+    <script>
+      // The quiet motion layer: mark lazy images as they finish decoding and
+      // reveal canvas drawings as they scroll into view. Re-armed after every
+      // ClientRouter navigation; everything degrades to "just visible".
+      const arm = () => {
+        document.querySelectorAll<HTMLImageElement>("img[loading='lazy']").forEach((img) => {
+          const done = () => img.classList.add('is-loaded');
+          if (img.complete) done();
+          else {
+            img.addEventListener('load', done, { once: true });
+            img.addEventListener('error', done, { once: true });
+          }
+        });
+
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('is-inview');
+                io.unobserve(entry.target);
+              }
+            }
+          },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0.05 },
+        );
+        document.querySelectorAll('[data-reveal]:not(.is-inview)').forEach((el) => io.observe(el));
+      };
+
+      arm();
+      document.addEventListener('astro:page-load', arm);
+    </script>
   </body>
 </html>

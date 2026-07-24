@@ -132,6 +132,12 @@ const cards = projects.map((p, i) => {
     aspect-ratio: 3 / 2;
     overflow: hidden;
     background: #f4f4f2;
+    transition: transform 0.5s var(--ease-land);
+  }
+
+  /* Pressing a card gives back a little weight before it navigates. */
+  .card:active .card__frame {
+    transform: scale(0.993);
   }
 
   /* The trimmed source box: cover-sized then rotated (see data/frame.ts). */
@@ -149,11 +155,24 @@ const cards = projects.map((p, i) => {
     display: block;
     max-width: none;
     filter: grayscale(1);
-    transition: filter 0.25s ease;
+    transition:
+      filter 0.35s ease,
+      transform 1.4s var(--ease-soft);
   }
 
-  .card:hover .card__frame :global(img) {
+  /* Colour returns and the image leans in, slow enough to feel like light
+     changing rather than an effect. */
+  .card:hover .card__frame :global(img),
+  .card:focus-visible .card__frame :global(img) {
     filter: grayscale(0);
+    transform: scale(1.02);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card:hover .card__frame :global(img),
+    .card:focus-visible .card__frame :global(img) {
+      transform: none;
+    }
   }
 
   /* Quiet caption: small and grey, taking ink only when the card is hovered. */

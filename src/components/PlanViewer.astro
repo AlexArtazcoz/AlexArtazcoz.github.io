@@ -37,7 +37,13 @@ const { lang } = Astro.props;
     inset: 0;
     z-index: 1000;
     background: rgba(255, 255, 255, 0.985);
-    animation: pv-in 0.22s ease both;
+    animation: pv-in 0.3s ease both;
+  }
+
+  /* Leaving is as soft as arriving. */
+  .pv--out {
+    animation: pv-out 0.24s ease both;
+    pointer-events: none;
   }
 
   @keyframes pv-in {
@@ -49,15 +55,26 @@ const { lang } = Astro.props;
     }
   }
 
+  @keyframes pv-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  /* The drawing settles into place: a breath of scale as it sharpens. */
   .pv__stage {
     position: absolute;
     inset: 0;
     opacity: 0;
-    transition: opacity 0.25s ease;
+    transform: scale(1.012);
+    transition:
+      opacity 0.3s ease,
+      transform 0.7s var(--ease-land);
   }
 
   .pv--ready .pv__stage {
     opacity: 1;
+    transform: none;
   }
 
   /* Thin rotating arc while the full-resolution file decodes. */
@@ -134,14 +151,19 @@ const { lang } = Astro.props;
 
     const close = () => {
       if (!active) return;
-      try {
-        active.viewer?.destroy();
-      } catch {
-        /* already gone */
-      }
-      active.root.remove();
-      document.documentElement.classList.remove('pv-lock');
+      const { root, viewer } = active;
       active = null;
+      document.documentElement.classList.remove('pv-lock');
+      // Fade the overlay out, then tear it down.
+      root.classList.add('pv--out');
+      setTimeout(() => {
+        try {
+          viewer?.destroy();
+        } catch {
+          /* already gone */
+        }
+        root.remove();
+      }, 240);
     };
 
     const open = async (fig: HTMLElement) => {

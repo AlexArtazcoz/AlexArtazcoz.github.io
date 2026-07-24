@@ -71,6 +71,9 @@ const editorModel = {
         class: 'canvas__item',
         'data-img': it.img,
         'data-full': it.src.src,
+        // Drawings rise in as the visitor scrolls; the cover is exempt — it
+        // arrives by morphing from the index card and must never start hidden.
+        ...(isCover ? {} : { 'data-reveal': '' }),
         'data-frame': JSON.stringify({
           rot: vf.rot,
           clip: [
