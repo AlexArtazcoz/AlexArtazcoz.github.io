@@ -1,0 +1,132 @@
+---
+/**
+ * A small black dot that trails the mouse with a touch of lag — the site's
+ * quiet companion while moving around (after claygarden.jp). Over anything
+ * carrying data-cursor-label (the index cards), the dot grows a little and
+ * the label fades in beside it, so the pointer itself names the project.
+ *
+ * Purely aesthetic: pointer-events none, hidden on touch screens, never
+ * created for visitors who prefer reduced motion, and the native cursor is
+ * left untouched.
+ */
+---
+
+<div class="cur" data-cursor aria-hidden="true">
+  <span class="cur__dot"></span>
+  <span class="cur__label"></span>
+</div>
+
+<style>
+  .cur {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1200;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .cur.is-on {
+    opacity: 1;
+  }
+
+  .cur__dot {
+    display: block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--ink);
+    transform: translate(-50%, -50%);
+    transition: transform 0.4s var(--ease-land);
+  }
+
+  .cur.has-label .cur__dot {
+    transform: translate(-50%, -50%) scale(1.7);
+  }
+
+  .cur__label {
+    position: absolute;
+    left: 13px;
+    top: 0;
+    transform: translateY(-50%) translateX(-4px);
+    white-space: nowrap;
+    font-size: var(--fs-xs);
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.92);
+    padding: 0.15rem 0.55rem;
+    opacity: 0;
+    transition:
+      opacity 0.3s ease,
+      transform 0.45s var(--ease-land);
+  }
+
+  .cur.has-label .cur__label {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+
+  @media (hover: none), (pointer: coarse) {
+    .cur {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  // Bound once per browser session; survives ClientRouter navigations because
+  // the listeners live on document and re-find the node each pass.
+  if (
+    !(window as any).__aaCursorDot &&
+    window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  ) {
+    (window as any).__aaCursorDot = true;
+
+    let targetX = innerWidth / 2;
+    let targetY = innerHeight / 2;
+    let x = targetX;
+    let y = targetY;
+    let seen = false;
+
+    const el = () => document.querySelector<HTMLElement>('[data-cursor]');
+
+    document.addEventListener('mousemove', (e) => {
+      targetX = e.clientX;
+      targetY = e.clientY;
+      if (!seen) {
+        // First contact: appear where the mouse is, no dash across the screen.
+        seen = true;
+        x = targetX;
+        y = targetY;
+      }
+      el()?.classList.add('is-on');
+    });
+
+    document.addEventListener('mouseleave', () => el()?.classList.remove('is-on'));
+
+    // The label follows whatever the mouse is over; leaving clears it.
+    document.addEventListener('mouseover', (e) => {
+      const cur = el();
+      if (!cur) return;
+      const source = (e.target as Element | null)?.closest?.('[data-cursor-label]');
+      const label = cur.querySelector<HTMLElement>('.cur__label');
+      if (source && label) {
+        label.textContent = (source as HTMLElement).dataset.cursorLabel ?? '';
+        cur.classList.add('has-label');
+      } else {
+        cur.classList.remove('has-label');
+      }
+    });
+
+    const trail = () => {
+      // A touch of lag: the dot drifts after the cursor, never with it.
+      x += (targetX - x) * 0.14;
+      y += (targetY - y) * 0.14;
+      const cur = el();
+      if (cur) cur.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      requestAnimationFrame(trail);
+    };
+    requestAnimationFrame(trail);
+  }
+</script>

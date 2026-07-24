@@ -10,6 +10,7 @@ import { ClientRouter } from 'astro:transitions';
 import { languages, t, type Lang } from '../i18n/ui';
 import { localePath } from '../i18n/utils';
 import { site } from '../data/site';
+import CursorDot from '../components/CursorDot.astro';
 
 interface Props {
   lang: Lang;
@@ -104,6 +105,7 @@ const personSchema = {
   <body>
     <a class="skip-link" href="#main">{t(lang, 'skip')}</a>
     <slot />
+    <CursorDot />
 
     <script>
       // The quiet motion layer: mark lazy images as they finish decoding and

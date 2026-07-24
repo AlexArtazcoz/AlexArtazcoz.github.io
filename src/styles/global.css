@@ -87,11 +87,6 @@ a:hover {
   opacity: 0.55;
 }
 
-/* Click feedback: a touch deeper than hover, released on the way out. */
-a:active {
-  opacity: 0.35;
-}
-
 ul,
 ol {
   list-style: none;
@@ -177,13 +172,13 @@ button {
     opacity: 1;
   }
 
-  /* Scroll reveals: canvas drawings rise gently into view. */
+  /* Scroll reveals: barely-there — a short soft breath, not an entrance. */
   html.js [data-reveal] {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(8px);
     transition:
-      opacity 0.9s var(--ease-soft),
-      transform 1s var(--ease-soft);
+      opacity 0.7s var(--ease-soft),
+      transform 0.8s var(--ease-soft);
   }
 
   html.js [data-reveal].is-inview {
