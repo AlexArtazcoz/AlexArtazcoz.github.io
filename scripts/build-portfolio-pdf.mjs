@@ -45,18 +45,21 @@ const L = {
     web_cover: 'The complete work, at full resolution:',
     web_project: 'Full project online',
     web_contact: 'Every project, with its complete canvas of drawings, at',
+    qr_caption: 'The complete work online',
   },
   ca: {
     toc: 'Índex',
     web_cover: 'L’obra completa, a màxima resolució:',
     web_project: 'Projecte complet a la web',
     web_contact: 'Tots els projectes, amb el seu canvas complet de dibuixos, a',
+    qr_caption: 'L’obra completa a la web',
   },
   es: {
     toc: 'Índice',
     web_cover: 'La obra completa, a máxima resolución:',
     web_project: 'Proyecto completo en la web',
     web_contact: 'Todos los proyectos, con su lienzo completo de dibujos, en',
+    qr_caption: 'La obra completa en la web',
   },
 };
 
@@ -127,7 +130,13 @@ function projectImages(p, max = 5) {
   const order = items.map((i) => i.img);
   const coverName = saved.cover ?? p.cover ?? order[0] ?? files[0]?.replace(/\.\w+$/, '');
   const chosen = (saved.picks ?? []).length ? saved.picks : order;
-  const names = [coverName, ...chosen.filter((n) => n !== coverName)];
+  // Picks lead, then the rest of the canvas backfills — the tail feeds the
+  // process strip on text pages.
+  const names = [
+    coverName,
+    ...chosen.filter((n) => n !== coverName),
+    ...order.filter((n) => n !== coverName && !chosen.includes(n)),
+  ];
   const out = [];
   for (const n of names) {
     const file = byStem.get(n);
@@ -137,23 +146,23 @@ function projectImages(p, max = 5) {
   return out;
 }
 
-/** Cache key: same file + same trim/rotation → same prepared JPEG. */
-const entryKey = (e) =>
-  `${e.file}|${JSON.stringify(e.crop?.trim ?? 0)}|${e.crop?.rot ?? 0}`;
+/** Cache key: same file + same trim/rotation/options → same prepared JPEG. */
+const entryKey = (e, opts) =>
+  `${e.file}|${JSON.stringify(e.crop?.trim ?? 0)}|${e.crop?.rot ?? 0}|${opts?.trimWhite ? 'tw' : ''}`;
 
 /** Resize/encode once (canvas trim + quarter-turn applied), reused across the
  * three language editions. */
 const jpgCache = new Map();
-async function preparedJpg(entry) {
+async function preparedJpg(entry, opts) {
   try {
-    return await preparedJpgInner(entry);
+    return await preparedJpgInner(entry, opts);
   } catch (err) {
     err.message = `${path.basename(entry.file)}: ${err.message}`;
     throw err;
   }
 }
-async function preparedJpgInner(entry) {
-  const k = entryKey(entry);
+async function preparedJpgInner(entry, opts) {
+  const k = entryKey(entry, opts);
   if (!jpgCache.has(k)) {
     let img = sharp(entry.file, { limitInputPixels: false });
     // Same invariant as the site renderer: any cut goes, ≥2% must survive.
@@ -173,6 +182,19 @@ async function preparedJpgInner(entry) {
       if (entry.crop?.rot) img = sharp(await img.png().toBuffer(), { limitInputPixels: false });
     }
     if (entry.crop?.rot) img = img.rotate(entry.crop.rot);
+    // Hero images shed their scanned white margins so the drawing, not the
+    // paper, fills the page. Falls back untouched if trimming misbehaves.
+    if (opts?.trimWhite) {
+      try {
+        const trimmed = await sharp(await img.png().toBuffer(), { limitInputPixels: false })
+          .trim({ background: '#ffffff', threshold: 16 })
+          .png()
+          .toBuffer();
+        img = sharp(trimmed, { limitInputPixels: false });
+      } catch {
+        // keep the un-trimmed pipeline
+      }
+    }
     const buf = await img
       .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
       .flatten({ background: '#ffffff' })
@@ -198,8 +220,13 @@ function footer(page, fonts, label, num) {
   page.drawText(numText, { x: W - M - fonts.reg.widthOfTextAtSize(numText, 7.5), y: 24, size: 7.5, font: fonts.reg, color: GREY });
 }
 
-/** One plan for the three editions: images resolved once, page numbers fixed. */
-const plan = projects.map((p) => ({ p, images: projectImages(p) }));
+/** One plan for the three editions: images resolved once, page numbers fixed.
+ * Beyond the five booklet images, up to three more canvas images serve as the
+ * process strip that fills short text pages. */
+const plan = projects.map((p) => {
+  const all = projectImages(p, 8);
+  return { p, images: all.slice(0, 5), spare: all.slice(5, 8) };
+});
 {
   let page = 3; // 1 cover, 2 contents
   for (const entry of plan) {
@@ -221,9 +248,9 @@ async function buildEdition(lang, qrPng) {
     bold: await doc.embedFont(StandardFonts.HelveticaBold),
   };
   const embedded = new Map();
-  const embed = async (entry) => {
-    const k = entryKey(entry);
-    if (!embedded.has(k)) embedded.set(k, await doc.embedJpg(await preparedJpg(entry)));
+  const embed = async (entry, opts) => {
+    const k = entryKey(entry, opts);
+    if (!embedded.has(k)) embedded.set(k, await doc.embedJpg(await preparedJpg(entry, opts)));
     return embedded.get(k);
   };
   const qr = await doc.embedPng(qrPng);
@@ -244,22 +271,40 @@ async function buildEdition(lang, qrPng) {
   addLink(doc, cover, M, H / 2 - 118, fonts.bold.widthOfTextAtSize(coverHome, 12), 16, homeUrl(lang));
   cover.drawText(safe(`${site.email} · ${HOST}`), { x: M, y: M - 8, size: 9, font: fonts.reg, color: GREY });
 
-  // ── Contents
+  // One hero drawing on the right half — a portfolio cover shows work.
+  const heroEntry =
+    plan[0].images.find((e) => e.file.includes('14-general-balaguer')) ?? plan[0].images[0];
+  if (heroEntry) {
+    drawContained(
+      cover,
+      await embed(heroEntry, { trimWhite: true }),
+      { x: W / 2 + 30, y: M + 16, w: W / 2 - M - 30, h: H - 2 * M - 16 },
+      { center: true },
+    );
+  }
+
+  // ── Contents — each entry carries its cover thumbnail: juries pick the
+  // pages they will actually read from this page.
   const toc = doc.addPage([W, H]);
   toc.drawText(safe(B.toc), { x: M, y: H - M - 20, size: 10, font: fonts.bold, color: GREY });
-  let rowY = H - M - 64;
-  for (const { p, firstPage } of plan) {
-    toc.drawText(safe(p.title[lang]), { x: M, y: rowY, size: 12, font: fonts.bold, color: INK });
+  let rowY = H - M - 70;
+  const thumbW = 62;
+  for (const { p, images, firstPage } of plan) {
+    if (images[0]) {
+      drawContained(toc, await embed(images[0]), { x: M, y: rowY - 24, w: thumbW, h: 38 }, { center: true });
+    }
+    const tx = M + thumbW + 16;
+    toc.drawText(safe(p.title[lang]), { x: tx, y: rowY, size: 12, font: fonts.bold, color: INK });
     const num = String(firstPage);
     toc.drawText(num, { x: W - M - fonts.reg.widthOfTextAtSize(num, 10), y: rowY, size: 10, font: fonts.reg, color: GREY });
-    toc.drawText(safe(`${p.type[lang]} — ${p.year}`), { x: M, y: rowY - 14, size: 8.5, font: fonts.reg, color: GREY });
-    toc.drawLine({ start: { x: M, y: rowY - 24 }, end: { x: W - M, y: rowY - 24 }, thickness: 0.7, color: HAIR });
-    rowY -= 44;
+    toc.drawText(safe(`${p.type[lang]} — ${p.year}`), { x: tx, y: rowY - 14, size: 8.5, font: fonts.reg, color: GREY });
+    toc.drawLine({ start: { x: M, y: rowY - 32 }, end: { x: W - M, y: rowY - 32 }, thickness: 0.7, color: HAIR });
+    rowY -= 52;
   }
   footer(toc, fonts, `${site.name} — Portfolio`, 2);
 
   // ── Projects
-  for (const { p, images, firstPage } of plan) {
+  for (const { p, images, spare, firstPage } of plan) {
     const page = doc.addPage([W, H]);
 
     // Text column. Measure it first: if fitxa + concept + credits would reach
@@ -317,9 +362,28 @@ async function buildEdition(lang, qrPng) {
     page.drawText(pUrlText, { x: M, y: M + 14, size: 8.5, font: fonts.reg, color: INK });
     addLink(doc, page, M, M + 10, fonts.reg.widthOfTextAtSize(pUrlText, 8.5), 14, pUrl);
 
-    // Cover image on the right
+    // Cover image on the right, scanned paper margins shed.
+    let heroBottom = M + 8;
     if (images[0]) {
-      drawContained(page, await embed(images[0]), { x: M + colW + 40, y: M + 8, w: W - 2 * M - colW - 40, h: H - 2 * M - 8 });
+      const hero = await embed(images[0], { trimWhite: true });
+      const box = { x: M + colW + 40, y: M + 8, w: W - 2 * M - colW - 40, h: H - 2 * M - 8 };
+      drawContained(page, hero, box);
+      const s = Math.min(box.w / hero.width, box.h / hero.height);
+      heroBottom = box.y + box.h - hero.height * s;
+    }
+
+    // A quiet process strip fills pages whose text ends early: the next canvas
+    // images, small, along the bottom — never repeated from the booklet pages.
+    const stripSources = spare;
+    const stripTop = Math.min(y - 24, heroBottom - 16);
+    const stripH = Math.min(110, stripTop - (M + 44));
+    if (stripSources.length >= 2 && stripH >= 78) {
+      const gut = 14;
+      const cells = stripSources.slice(0, 3);
+      const cellW = (W - 2 * M - gut * (cells.length - 1)) / cells.length;
+      for (const [i, e] of cells.entries()) {
+        drawContained(page, await embed(e), { x: M + i * (cellW + gut), y: M + 44, w: cellW, h: stripH });
+      }
     }
     footer(page, fonts, `${site.name} — Portfolio`, firstPage);
 
@@ -363,7 +427,8 @@ async function buildEdition(lang, qrPng) {
   back.drawText(safe(site.name), { x: M, y: H - M - 16, size: 11, font: fonts.bold, color: INK });
   let by = H - M - 44;
   for (const para of bio[lang]) {
-    for (const line of wrap(para, fonts.reg, 9.5, 500)) {
+    // ~80-character measure: comfortable reading, not a wall-to-wall line.
+    for (const line of wrap(para, fonts.reg, 9.5, 400)) {
       back.drawText(line, { x: M, y: by, size: 9.5, font: fonts.reg, color: INK });
       by -= 14;
     }
@@ -381,6 +446,14 @@ async function buildEdition(lang, qrPng) {
   const qrSize = 96;
   back.drawImage(qr, { x: W - M - qrSize, y: 138, width: qrSize, height: qrSize });
   addLink(doc, back, W - M - qrSize, 138, qrSize, qrSize, homeUrl(lang));
+  const qrCaption = safe(B.qr_caption);
+  back.drawText(qrCaption, {
+    x: W - M - qrSize / 2 - fonts.reg.widthOfTextAtSize(qrCaption, 7.5) / 2,
+    y: 126,
+    size: 7.5,
+    font: fonts.reg,
+    color: GREY,
+  });
   back.drawText(safe(`${site.name} — ${site.role[lang]}, ${site.location}`), { x: M, y: M - 8, size: 9, font: fonts.reg, color: GREY });
 
   const bytes = await doc.save();
