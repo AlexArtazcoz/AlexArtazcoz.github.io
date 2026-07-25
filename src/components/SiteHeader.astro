@@ -13,8 +13,8 @@ interface Props {
   lang: Lang;
   /** Locale-relative path of the current page (for the language switch). */
   path?: string;
-  /** Which nav item is current: 'work' | 'info' | none. */
-  active?: 'work' | 'info';
+  /** Which nav item is current: 'projects' | 'info' | none. */
+  active?: 'projects' | 'info';
 }
 
 const { lang, path = '', active } = Astro.props;
@@ -24,8 +24,8 @@ const { lang, path = '', active } = Astro.props;
   <a class="hd__name" href={localePath(lang, '')}>{site.name}</a>
 
   <nav class="hd__nav" aria-label="Site">
-    <a href={localePath(lang, '')} aria-current={active === 'work' ? 'page' : undefined}>
-      {t(lang, 'nav_work')}
+    <a href={localePath(lang, '')} aria-current={active === 'projects' ? 'page' : undefined}>
+      {t(lang, 'nav_projects')}
     </a>
     <a href={localePath(lang, 'info/')} aria-current={active === 'info' ? 'page' : undefined}>
       {t(lang, 'nav_info')}

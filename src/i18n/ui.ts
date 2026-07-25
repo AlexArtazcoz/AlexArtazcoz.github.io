@@ -30,10 +30,10 @@ export const localeShort: Record<Lang, string> = {
 export const ui = {
   en: {
     skip: 'Skip to content',
-    nav_work: 'work',
+    nav_projects: 'projects',
     nav_info: 'info',
     lang_label: 'Language',
-    back_to_index: 'work',
+    back_to_index: 'projects',
     fitxa_program: 'Program',
     fitxa_location: 'Location',
     fitxa_year: 'Year',
@@ -54,10 +54,10 @@ export const ui = {
   },
   ca: {
     skip: 'Vés al contingut',
-    nav_work: 'obra',
+    nav_projects: 'projectes',
     nav_info: 'info',
     lang_label: 'Idioma',
-    back_to_index: 'obra',
+    back_to_index: 'projectes',
     fitxa_program: 'Programa',
     fitxa_location: 'Lloc',
     fitxa_year: 'Any',
@@ -78,10 +78,10 @@ export const ui = {
   },
   es: {
     skip: 'Ir al contenido',
-    nav_work: 'obra',
+    nav_projects: 'proyectos',
     nav_info: 'info',
     lang_label: 'Idioma',
-    back_to_index: 'obra',
+    back_to_index: 'proyectos',
     fitxa_program: 'Programa',
     fitxa_location: 'Lugar',
     fitxa_year: 'Año',
