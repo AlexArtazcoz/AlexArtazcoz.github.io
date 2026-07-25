@@ -25,7 +25,8 @@ const { lang, path = '' } = Astro.props;
         aria-label={localeName[l]}
         aria-current={l === lang ? 'true' : undefined}
       >
-        {localeShort[l]}
+        <span class="langs__code">{l.toUpperCase()}</span>
+        <span class="langs__full">{localeShort[l]}</span>
       </a>
     ))
   }
@@ -34,8 +35,28 @@ const { lang, path = '' } = Astro.props;
 <style>
   .langs {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.6rem;
     font-size: var(--fs-s);
+  }
+
+  /* Phones get EN CA ES, wider screens the full ENG CAT ESP. Either way each
+     link is announced by its aria-label, so the visible text is free to shrink. */
+  .langs__full {
+    display: none;
+  }
+
+  @media (min-width: 40rem) {
+    .langs {
+      gap: 0.75rem;
+    }
+
+    .langs__code {
+      display: none;
+    }
+
+    .langs__full {
+      display: inline;
+    }
   }
 
   .langs a {

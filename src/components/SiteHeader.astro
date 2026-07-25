@@ -36,11 +36,18 @@ const { lang, path = '', active } = Astro.props;
 </header>
 
 <style>
+  /* One quiet line: name, sections, languages. On phones the gaps close up
+     (and the switcher goes down to two-letter codes) so that line survives
+     instead of dropping the languages onto an orphan row under the name. */
   .hd {
     display: flex;
     align-items: baseline;
-    gap: 1.25rem 2rem;
+    gap: 1.25rem 0.85rem;
     flex-wrap: wrap;
+    /* Only bites on the line that has no auto margin: if a very narrow screen
+       (or a large system font) still forces a wrap, the switcher lands in the
+       right corner instead of orphaned under the wordmark. */
+    justify-content: flex-end;
     padding-block: 1.4rem 2.8rem;
   }
 
@@ -53,9 +60,19 @@ const { lang, path = '', active } = Astro.props;
 
   .hd__nav {
     display: flex;
-    gap: 1.25rem;
+    gap: 0.9rem;
     font-size: var(--fs-s);
     margin-inline-end: auto;
+  }
+
+  @media (min-width: 40rem) {
+    .hd {
+      column-gap: 2rem;
+    }
+
+    .hd__nav {
+      gap: 1.25rem;
+    }
   }
 
   .hd__nav a {
