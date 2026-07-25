@@ -65,7 +65,7 @@ export const cv: Record<Lang, Cv> = {
       languages: 'LANGUAGES',
     },
     profile:
-      'Fourth year architecture student at ETSAV (UPC), combining studio design with real building experience, from construction sites to production management. Works almost always with what is already there: historic centres of medium sized cities, renovations and reclaimed objects, with reuse as the starting point.',
+      'I am in my fourth year of architecture at ETSAV (UPC). I move between drawing, physical models and the building site: I have spent time working on site and on the production side of a construction company. What interests me is working with what is already there, from the historic centres of medium sized cities to reclaimed objects, with reuse as the starting point.',
     jobs: [
       {
         role: 'Production Intern',
@@ -125,7 +125,7 @@ export const cv: Record<Lang, Cv> = {
       languages: 'IDIOMES',
     },
     profile:
-      'Estudiant de quart curs d’arquitectura a l’ETSAV (UPC) que combina el treball de projecte amb experiència a peu d’obra i a la gestió de producció. Treballa gairebé sempre sobre allò que ja existeix: centres històrics de ciutats mitjanes, reformes i objectes recuperats, amb el reaprofitament com a punt de partida.',
+      'Estudio quart d’arquitectura a l’ETSAV (UPC). Em moc entre el dibuix, la maqueta i l’obra: he passat temps a peu d’obra i a la producció d’una constructora. M’interessa treballar sobre allò que ja existeix, des dels centres històrics de ciutats mitjanes fins als objectes recuperats, amb el reaprofitament com a punt de partida.',
     jobs: [
       {
         role: 'Becari de producció',
@@ -185,7 +185,7 @@ export const cv: Record<Lang, Cv> = {
       languages: 'IDIOMAS',
     },
     profile:
-      'Estudiante de cuarto curso de arquitectura en la ETSAV (UPC) que combina el trabajo de proyecto con experiencia a pie de obra y en la gestión de producción. Trabaja casi siempre sobre lo que ya existe: centros históricos de ciudades medianas, reformas y objetos recuperados, con el reaprovechamiento como punto de partida.',
+      'Estudio cuarto de arquitectura en la ETSAV (UPC). Me muevo entre el dibujo, la maqueta y la obra: he pasado tiempo a pie de obra y en la producción de una constructora. Me interesa trabajar sobre lo que ya existe, desde los centros históricos de ciudades medianas hasta los objetos recuperados, con el reaprovechamiento como punto de partida.',
     jobs: [
       {
         role: 'Becario de producción',
