@@ -830,8 +830,8 @@
     ]
   },
   "tap-iv": {
-    "h": 8766,
-    "cover": "02-imatges-p02",
+    "h": 9118,
+    "cover": "02-imatges-p17",
     "picks": [
       "02-imatges-p01",
       "01-quadern-p09",
@@ -1081,7 +1081,7 @@
       {
         "img": "02-imatges-p17",
         "x": 28,
-        "y": 7201,
+        "y": 7198,
         "w": 956,
         "z": 32,
         "crop": {
@@ -1103,6 +1103,19 @@
         "y": 8312,
         "w": 304,
         "z": 42,
+        "crop": {
+          "aspect": null,
+          "fx": 50,
+          "fy": 50,
+          "zoom": 1
+        }
+      },
+      {
+        "img": "03-deriva",
+        "x": 22,
+        "y": 8766,
+        "w": 467,
+        "z": 43,
         "crop": {
           "aspect": null,
           "fx": 50,
