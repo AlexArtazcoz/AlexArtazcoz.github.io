@@ -72,28 +72,28 @@ const cards = projects.map((p, i) => {
         cards.map(({ p, cover, g, featured }) => (
           <li class:list={{ feat: featured }}>
             <a class="card" href={`${lang === 'en' ? '' : `/${lang}`}/projects/${p.slug}/`}>
-              <span
-                class="card__frame"
-                transition:name={`cover-${p.slug}`}
-                transition:animate={fade({ duration: 650 })}
-              >
-                {cover && g && (
-                  <span class="card__src" style={srcStyle(g)}>
-                    <Image
-                      src={cover.src}
-                      alt={p.title[lang]}
-                      width={Math.min(featured ? 2000 : 1400, cover.src.width)}
-                      widths={candidates.filter((w) => w <= cover.src.width)}
-                      sizes={featured ? '92vw' : '(min-width: 60rem) 30vw, (min-width: 40rem) 45vw, 100vw'}
-                      loading={featured ? 'eager' : 'lazy'}
-                      style={imgStyle(g)}
-                    />
-                  </span>
-                )}
-              </span>
-              <span class="card__meta" aria-hidden="true">
-                <span class="card__meta-title">{p.title[lang]}</span>
-                <span class="card__meta-tag">{tagFor(p)}</span>
+              <span class="card__zoom">
+                <span class="card__tag" aria-hidden="true">{tagFor(p)}</span>
+                <span
+                  class="card__frame"
+                  transition:name={`cover-${p.slug}`}
+                  transition:animate={fade({ duration: 650 })}
+                >
+                  {cover && g && (
+                    <span class="card__src" style={srcStyle(g)}>
+                      <Image
+                        src={cover.src}
+                        alt={p.title[lang]}
+                        width={Math.min(featured ? 2000 : 1400, cover.src.width)}
+                        widths={candidates.filter((w) => w <= cover.src.width)}
+                        sizes={featured ? '92vw' : '(min-width: 60rem) 30vw, (min-width: 40rem) 45vw, 100vw'}
+                        loading={featured ? 'eager' : 'lazy'}
+                        style={imgStyle(g)}
+                      />
+                    </span>
+                  )}
+                </span>
+                <span class="card__name" aria-hidden="true">{p.title[lang]}</span>
               </span>
               <span
                 class="card__title"
@@ -117,6 +117,8 @@ const cards = projects.map((p, i) => {
     display: grid;
     grid-template-columns: 1fr;
     gap: 3rem 2.6rem;
+    /* Room above the first row for its provenance label to appear in. */
+    padding-top: 1.6rem;
   }
 
   @media (min-width: 40rem) {
@@ -145,62 +147,74 @@ const cards = projects.map((p, i) => {
     position: relative;
   }
 
-  /* On hover the work names itself inside the image: title in one corner,
-     where it comes from in the other. White pads guarantee contrast on any
-     drawing or photograph. Sits outside the morphing frame so the cover
-     glide to the project page stays clean. */
-  .card__meta {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-  }
-
-  .card:hover .card__meta,
-  .card:focus-visible .card__meta {
+  .card:hover {
     opacity: 1;
   }
 
-  .card__meta-title,
-  .card__meta-tag {
-    position: absolute;
-    font-size: var(--fs-xs);
-    color: var(--ink);
-    background: rgba(255, 255, 255, 0.92);
-    padding: 0.15rem 0.55rem;
-    transition: transform 0.6s var(--ease-land);
+  /* The zoom acts on this wrapper, which holds the image AND its two labels —
+     so on hover the whole piece grows past its margins and the words travel
+     with it. */
+  .card__zoom {
+    display: block;
+    position: relative;
+    transition: transform 3.2s var(--ease-soft);
   }
 
-  .card__meta-title {
-    left: 0.55rem;
-    bottom: 0.55rem;
-    transform: translateY(5px);
+  .card:hover .card__zoom,
+  .card:focus-visible .card__zoom {
+    transform: scale(1.05);
   }
 
-  .card__meta-tag {
-    right: 0.55rem;
-    top: 0.55rem;
-    transform: translateY(-5px);
-  }
-
-  .card:hover .card__meta-title,
-  .card:hover .card__meta-tag,
-  .card:focus-visible .card__meta-title,
-  .card:focus-visible .card__meta-tag {
-    transform: none;
-  }
-
-  /* No hover, no overlay: touch screens keep the caption below instead. */
-  @media (hover: none), (pointer: coarse) {
-    .card__meta {
-      display: none;
+  @media (prefers-reduced-motion: reduce) {
+    .card:hover .card__zoom,
+    .card:focus-visible .card__zoom {
+      transform: none;
     }
   }
 
-  .card:hover {
+  /* The work names itself in the white around the image: where it comes from
+     above-left, its title below-right. No pads — on the page's own ground the
+     ink is contrast enough. */
+  .card__tag,
+  .card__name {
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+    white-space: nowrap;
+    font-size: var(--fs-xs);
+    color: var(--ink);
+    opacity: 0;
+    transition:
+      opacity 0.5s ease,
+      transform 0.6s var(--ease-land);
+  }
+
+  .card__tag {
+    left: 0;
+    bottom: calc(100% + 0.45rem);
+    transform: translateY(4px);
+  }
+
+  .card__name {
+    right: 0;
+    top: calc(100% + 0.45rem);
+    transform: translateY(-4px);
+  }
+
+  .card:hover .card__tag,
+  .card:hover .card__name,
+  .card:focus-visible .card__tag,
+  .card:focus-visible .card__name {
     opacity: 1;
+    transform: none;
+  }
+
+  /* No hover, no labels: touch screens keep the caption below the card. */
+  @media (hover: none), (pointer: coarse) {
+    .card__tag,
+    .card__name {
+      display: none;
+    }
   }
 
   .card__frame {
@@ -209,21 +223,6 @@ const cards = projects.map((p, i) => {
     aspect-ratio: 3 / 2;
     overflow: hidden;
     background: #f4f4f2;
-    transition: transform 3.2s var(--ease-soft);
-  }
-
-  /* On hover the WHOLE framed image zooms as one piece, slowly growing past
-     its own margins over the grid — no internal crop, no lean. */
-  .card:hover .card__frame,
-  .card:focus-visible .card__frame {
-    transform: scale(1.05);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .card:hover .card__frame,
-    .card:focus-visible .card__frame {
-      transform: none;
-    }
   }
 
   /* The trimmed source box: cover-sized then rotated (see data/frame.ts). */
