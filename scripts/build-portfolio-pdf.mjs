@@ -6,12 +6,13 @@
  *   public/Alex-Artazcoz-Portfolio-{EN,CA,ES}.pdf
  *
  * Format: A4 landscape — cover, contents page, 1–2 pages per project (title,
- * fact sheet, concept, credits, best images in canvas order, link to the full
- * project online) and a contact page with a QR code to the site — in the
- * site's quiet aesthetic (white, hairlines, Helvetica ≈ Archivo).
+ * fact sheet, concept, credits, best images in canvas order) and a closing page
+ * with the bio and an email address — in the site's quiet aesthetic (white,
+ * hairlines, Helvetica ≈ Archivo).
  *
- * The booklet is deliberately a teaser: every page points back to the website,
- * where each project shows its complete canvas at full resolution.
+ * The website is named once, on the cover, and never again: a booklet that
+ * advertises itself on every page reads as a sales sheet. Whoever wants the
+ * complete canvases knows where to look.
  *
  * Re-run after content changes:  node scripts/build-portfolio-pdf.mjs
  */
@@ -19,7 +20,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import QRCode from 'qrcode';
 import { PDFDocument, PDFName, PDFString, StandardFonts, rgb } from 'pdf-lib';
 import { projects } from '../src/data/projects.ts';
 import { site, bio } from '../src/data/site.ts';
@@ -40,32 +40,13 @@ const HAIR = rgb(0.89, 0.89, 0.88);
 
 /** Booklet-only wording (site UI strings live in src/i18n/ui.ts). */
 const L = {
-  en: {
-    toc: 'Contents',
-    web_cover: 'The complete work, at full resolution:',
-    web_project: 'Full project online',
-    web_contact: 'Every project, with its complete canvas of drawings, at',
-    qr_caption: 'The complete work online',
-  },
-  ca: {
-    toc: 'Índex',
-    web_cover: 'L’obra completa, a màxima resolució:',
-    web_project: 'Projecte complet a la web',
-    web_contact: 'Tots els projectes, amb el seu canvas complet de dibuixos, a',
-    qr_caption: 'L’obra completa a la web',
-  },
-  es: {
-    toc: 'Índice',
-    web_cover: 'La obra completa, a máxima resolución:',
-    web_project: 'Proyecto completo en la web',
-    web_contact: 'Todos los proyectos, con su lienzo completo de dibujos, en',
-    qr_caption: 'La obra completa en la web',
-  },
+  en: { toc: 'Contents' },
+  ca: { toc: 'Índex' },
+  es: { toc: 'Índice' },
 };
 
-/** Language-prefixed site URLs (EN lives at the root). */
+/** Language-prefixed site URL (EN lives at the root). Used on the cover only. */
 const homeUrl = (lang) => `https://${HOST}/${lang === 'en' ? '' : `${lang}/`}`;
-const projectUrl = (lang, slug) => `${homeUrl(lang)}projects/${slug}/`;
 const displayUrl = (url) => url.replace(/^https:\/\//, '').replace(/\/$/, '');
 
 /** WinAnsi cannot encode every glyph in the texts — normalize the strays. */
@@ -235,7 +216,7 @@ const plan = projects.map((p) => {
   }
 }
 
-async function buildEdition(lang, qrPng) {
+async function buildEdition(lang) {
   const T = ui[lang];
   const B = L[lang];
   const doc = await PDFDocument.create();
@@ -253,7 +234,6 @@ async function buildEdition(lang, qrPng) {
     if (!embedded.has(k)) embedded.set(k, await doc.embedJpg(await preparedJpg(entry, opts)));
     return embedded.get(k);
   };
-  const qr = await doc.embedPng(qrPng);
 
   // ── Cover
   const cover = doc.addPage([W, H]);
@@ -265,11 +245,11 @@ async function buildEdition(lang, qrPng) {
   cover.drawText(safe(`${site.role[lang]} — ${site.location}`), { x: M, y: H / 2 - 12, size: 13, font: fonts.reg, color: GREY });
   cover.drawLine({ start: { x: M, y: H / 2 - 34 }, end: { x: M + 56, y: H / 2 - 34 }, thickness: 1.2, color: INK });
   cover.drawText('Portfolio 2023—2026', { x: M, y: H / 2 - 58, size: 11, font: fonts.reg, color: GREY });
-  cover.drawText(safe(B.web_cover), { x: M, y: H / 2 - 96, size: 9.5, font: fonts.reg, color: GREY });
+  // The one mention of the website in the whole booklet.
   const coverHome = displayUrl(homeUrl(lang));
-  cover.drawText(coverHome, { x: M, y: H / 2 - 114, size: 12, font: fonts.bold, color: INK });
-  addLink(doc, cover, M, H / 2 - 118, fonts.bold.widthOfTextAtSize(coverHome, 12), 16, homeUrl(lang));
-  cover.drawText(safe(`${site.email} · ${HOST}`), { x: M, y: M - 8, size: 9, font: fonts.reg, color: GREY });
+  cover.drawText(coverHome, { x: M, y: H / 2 - 96, size: 12, font: fonts.bold, color: INK });
+  addLink(doc, cover, M, H / 2 - 100, fonts.bold.widthOfTextAtSize(coverHome, 12), 16, homeUrl(lang));
+  cover.drawText(safe(site.email), { x: M, y: M - 8, size: 9, font: fonts.reg, color: GREY });
 
   // One hero drawing on the right half — a portfolio cover shows work.
   const heroEntry =
@@ -308,8 +288,8 @@ async function buildEdition(lang, qrPng) {
     const page = doc.addPage([W, H]);
 
     // Text column. Measure it first: if fitxa + concept + credits would reach
-    // the web link at the bottom, scale the type down so the page never
-    // overflows (long texts read smaller, they never get cut).
+    // the bottom margin, scale the type down so the page never overflows
+    // (long texts read smaller, they never get cut).
     const colW = 240;
     const fitxa = [
       [T.fitxa_program, p.type[lang]],
@@ -324,7 +304,7 @@ async function buildEdition(lang, qrPng) {
       creditLines += 2 + wrap(c.names.join(', '), fonts.reg, 8.5, colW).length;
     }
     const needed = 26 + fitxaLines * 12.5 + 10 + conceptLines * 14 + creditLines * 12;
-    const avail = H - 2 * M - 20 - 44; // title top to just above the web link
+    const avail = H - 2 * M - 20 - 12; // title top down to the bottom margin
     const k = Math.min(1, Math.max(0.8, avail / needed));
 
     let y = H - M - 20;
@@ -345,22 +325,15 @@ async function buildEdition(lang, qrPng) {
     // Credits — the same quiet block the project page shows.
     for (const c of p.credits ?? []) {
       y -= 12 * k;
-      if (y < M + 68) break;
+      if (y < M + 22) break;
       page.drawText(safe(c.label[lang]), { x: M, y, size: 8 * k, font: fonts.bold, color: GREY });
       y -= 12 * k;
       for (const line of wrap(c.names.join(', '), fonts.reg, 8.5 * k, colW)) {
-        if (y < M + 56) break;
+        if (y < M + 10) break;
         page.drawText(line, { x: M, y, size: 8.5 * k, font: fonts.reg, color: GREY });
         y -= 12 * k;
       }
     }
-
-    // The website carries the full canvas — say so on every project.
-    const pUrl = projectUrl(lang, p.slug);
-    page.drawText(safe(`${B.web_project}:`), { x: M, y: M + 26, size: 8, font: fonts.reg, color: GREY });
-    const pUrlText = displayUrl(pUrl);
-    page.drawText(pUrlText, { x: M, y: M + 14, size: 8.5, font: fonts.reg, color: INK });
-    addLink(doc, page, M, M + 10, fonts.reg.widthOfTextAtSize(pUrlText, 8.5), 14, pUrl);
 
     // Cover image on the right, scanned paper margins shed.
     let heroBottom = M + 8;
@@ -421,8 +394,8 @@ async function buildEdition(lang, qrPng) {
     }
   }
 
-  // ── Contact — the person first (bio), then the loudest pointer to the
-  // website, QR included.
+  // ── Closing page — the person (bio) and one way to reach them. No repeat of
+  // the cover's web address, no QR: whoever wants more will ask.
   const back = doc.addPage([W, H]);
   back.drawText(safe(site.name), { x: M, y: H - M - 16, size: 11, font: fonts.bold, color: INK });
   let by = H - M - 44;
@@ -437,23 +410,6 @@ async function buildEdition(lang, qrPng) {
   back.drawText(safe(T.info_contact), { x: M, y: 234, size: 11, font: fonts.bold, color: GREY });
   back.drawText(site.email, { x: M, y: 206, size: 16, font: fonts.reg, color: INK });
   addLink(doc, back, M, 202, fonts.reg.widthOfTextAtSize(site.email, 16), 20, `mailto:${site.email}`);
-  for (const [i, line] of wrap(B.web_contact, fonts.reg, 9.5, 340).entries()) {
-    back.drawText(line, { x: M, y: 170 - i * 14, size: 9.5, font: fonts.reg, color: GREY });
-  }
-  const backHome = displayUrl(homeUrl(lang));
-  back.drawText(backHome, { x: M, y: 140, size: 15, font: fonts.bold, color: INK });
-  addLink(doc, back, M, 136, fonts.bold.widthOfTextAtSize(backHome, 15), 19, homeUrl(lang));
-  const qrSize = 96;
-  back.drawImage(qr, { x: W - M - qrSize, y: 138, width: qrSize, height: qrSize });
-  addLink(doc, back, W - M - qrSize, 138, qrSize, qrSize, homeUrl(lang));
-  const qrCaption = safe(B.qr_caption);
-  back.drawText(qrCaption, {
-    x: W - M - qrSize / 2 - fonts.reg.widthOfTextAtSize(qrCaption, 7.5) / 2,
-    y: 126,
-    size: 7.5,
-    font: fonts.reg,
-    color: GREY,
-  });
   back.drawText(safe(`${site.name} — ${site.role[lang]}, ${site.location}`), { x: M, y: M - 8, size: 9, font: fonts.reg, color: GREY });
 
   const bytes = await doc.save();
@@ -463,12 +419,5 @@ async function buildEdition(lang, qrPng) {
 }
 
 for (const lang of ['en', 'ca', 'es']) {
-  const qrPng = await QRCode.toBuffer(homeUrl(lang), {
-    type: 'png',
-    errorCorrectionLevel: 'M',
-    margin: 0,
-    width: 512,
-    color: { dark: '#141414', light: '#ffffff' },
-  });
-  await buildEdition(lang, qrPng);
+  await buildEdition(lang);
 }
