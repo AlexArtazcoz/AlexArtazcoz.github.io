@@ -50,7 +50,7 @@ export const ui = {
     viewer_open: 'View at full resolution',
     viewer_close: 'Close viewer',
     meta_description:
-      'Architecture portfolio — a selection of academic and design projects.',
+      'Architecture portfolio: a selection of academic and design projects.',
   },
   ca: {
     skip: 'Vés al contingut',
@@ -74,7 +74,7 @@ export const ui = {
     viewer_open: 'Veure a resolució completa',
     viewer_close: 'Tanca el visor',
     meta_description:
-      'Portfoli d’arquitectura — una selecció de projectes acadèmics i de disseny.',
+      'Portfoli d’arquitectura: una selecció de projectes acadèmics i de disseny.',
   },
   es: {
     skip: 'Ir al contenido',
@@ -98,7 +98,7 @@ export const ui = {
     viewer_open: 'Ver a resolución completa',
     viewer_close: 'Cerrar el visor',
     meta_description:
-      'Portafolio de arquitectura — una selección de proyectos académicos y de diseño.',
+      'Portafolio de arquitectura: una selección de proyectos académicos y de diseño.',
   },
 } as const;
 
