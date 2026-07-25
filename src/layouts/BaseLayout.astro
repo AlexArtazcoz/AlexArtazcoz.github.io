@@ -135,7 +135,15 @@ const personSchema = {
         document.querySelectorAll('[data-reveal]:not(.is-inview)').forEach((el) => io.observe(el));
       };
 
+      // Every ClientRouter swap strips <html> down to the attributes the
+      // incoming static document carries, so the `js` mark set in <head> is
+      // lost — and with it the whole motion layer, silently, from the first
+      // in-site navigation onwards. Re-mark on after-swap: that runs with the
+      // new DOM in place but before it is painted, so nothing flashes.
+      const mark = () => document.documentElement.classList.add('js');
+
       arm();
+      document.addEventListener('astro:after-swap', mark);
       document.addEventListener('astro:page-load', arm);
     </script>
   </body>
