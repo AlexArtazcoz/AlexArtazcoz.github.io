@@ -23,6 +23,9 @@
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.35s ease;
+    /* Its own compositor layer: Safari then moves the dot without waiting on
+       page layout work, which is where the visible stutter came from. */
+    will-change: transform;
   }
 
   .cur.is-on {
@@ -55,11 +58,19 @@
   ) {
     (window as any).__aaCursorDot = true;
 
+    // How long the dot takes to cover ~63% of the distance still separating it
+    // from the pointer. The lag is expressed in milliseconds, never in frames,
+    // so it feels identical at 30, 60, 120 or 144Hz — on macOS, on Windows,
+    // with a mouse or with a trackpad. (The old `* 0.07` per frame meant a
+    // 144Hz screen ran the trail twice as fast as a 60Hz one.)
+    const LAG_MS = 120;
+
     let targetX = innerWidth / 2;
     let targetY = innerHeight / 2;
     let x = targetX;
     let y = targetY;
     let seen = false;
+    let last = 0;
 
     const el = () => document.querySelector<HTMLElement>('[data-cursor]');
 
@@ -77,10 +88,18 @@
 
     document.addEventListener('mouseleave', () => el()?.classList.remove('is-on'));
 
-    const trail = () => {
-      // Pronounced lag: the dot clearly drifts behind, arriving late on purpose.
-      x += (targetX - x) * 0.07;
-      y += (targetY - y) * 0.07;
+    const trail = (now: number) => {
+      // Pronounced lag: the dot clearly drifts behind, arriving late on
+      // purpose. Time-based easing — the share of the gap closed this frame
+      // depends on how long the frame actually took, so a slow browser drops
+      // frames without the dot ever slowing down. Long gaps (a backgrounded
+      // tab, a stalled main thread) are capped so the dot eases in rather than
+      // teleporting on the first frame back.
+      const dt = last ? Math.min(now - last, 100) : 16.7;
+      last = now;
+      const k = 1 - Math.exp(-dt / LAG_MS);
+      x += (targetX - x) * k;
+      y += (targetY - y) * k;
       const cur = el();
       if (cur) cur.style.transform = `translate3d(${x}px, ${y}px, 0)`;
       requestAnimationFrame(trail);
