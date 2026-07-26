@@ -242,7 +242,7 @@ async function buildEdition(lang) {
     cover.drawSvgPath(d, { x: M, y: H - M - 8, scale: 1.6, borderColor: INK, borderWidth: 1.3 });
   }
   cover.drawText(site.name, { x: M, y: H / 2 + 16, size: 40, font: fonts.bold, color: INK });
-  cover.drawText(safe(`${site.role[lang]} — ${site.location}`), { x: M, y: H / 2 - 12, size: 13, font: fonts.reg, color: GREY });
+  cover.drawText(safe([site.role[lang], site.location].filter(Boolean).join(' — ')), { x: M, y: H / 2 - 12, size: 13, font: fonts.reg, color: GREY });
   cover.drawLine({ start: { x: M, y: H / 2 - 34 }, end: { x: M + 56, y: H / 2 - 34 }, thickness: 1.2, color: INK });
   cover.drawText('Portfolio 2023—2026', { x: M, y: H / 2 - 58, size: 11, font: fonts.reg, color: GREY });
   // The one mention of the website in the whole booklet.
@@ -410,7 +410,7 @@ async function buildEdition(lang) {
   back.drawText(safe(T.info_contact), { x: M, y: 234, size: 11, font: fonts.bold, color: GREY });
   back.drawText(site.email, { x: M, y: 206, size: 16, font: fonts.reg, color: INK });
   addLink(doc, back, M, 202, fonts.reg.widthOfTextAtSize(site.email, 16), 20, `mailto:${site.email}`);
-  back.drawText(safe(`${site.name} — ${site.role[lang]}, ${site.location}`), { x: M, y: M - 8, size: 9, font: fonts.reg, color: GREY });
+  back.drawText(safe(`${[site.name, site.role[lang]].filter(Boolean).join(' — ')}, ${site.location}`), { x: M, y: M - 8, size: 9, font: fonts.reg, color: GREY });
 
   const bytes = await doc.save();
   const out = path.join(root, 'public', `Alex-Artazcoz-Portfolio-${lang.toUpperCase()}.pdf`);

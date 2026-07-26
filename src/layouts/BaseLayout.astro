@@ -26,7 +26,7 @@ interface Props {
 
 const { lang, path = '', title, description, ogImage, schema } = Astro.props;
 
-const pageTitle = title ?? `${site.name} — ${site.role[lang]}`;
+const pageTitle = title ?? [site.name, site.role[lang]].filter(Boolean).join(' — ');
 const pageDescription = description ?? t(lang, 'meta_description');
 
 const canonical = new URL(Astro.url.pathname, Astro.site);
@@ -38,7 +38,8 @@ const personSchema = {
   '@context': 'https://schema.org',
   '@type': 'Person',
   name: site.name,
-  jobTitle: site.role[lang],
+  // Omitted rather than emitted empty when no role is set.
+  ...(site.role[lang] ? { jobTitle: site.role[lang] } : {}),
   email: `mailto:${site.email}`,
   url: Astro.site?.href,
   address: { '@type': 'PostalAddress', addressLocality: 'Barcelona', addressCountry: 'ES' },

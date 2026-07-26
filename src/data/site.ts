@@ -28,11 +28,15 @@ export const site = {
   /** Shown as the wordmark (top-left) and in the browser title. */
   name: 'Alex Artazcoz',
 
-  /** One-line role under your name in the hero. */
+  /**
+   * One-line role, used in the browser title, the `jobTitle` search engines
+   * read, the share card and the portfolio PDF cover. Leave a language empty
+   * and the name simply stands alone in all four — no dangling separator.
+   */
   role: {
-    en: 'Architecture student',
-    ca: 'Estudiant d’arquitectura',
-    es: 'Estudiante de arquitectura',
+    en: '',
+    ca: '',
+    es: '',
   } satisfies Localized,
 
   location: 'Barcelona, Spain',

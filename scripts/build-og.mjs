@@ -127,7 +127,7 @@ async function buildDefaultCard() {
         <path d="M10.4 20 L24 26" stroke-width="1.25"/>
       </g>
       <text x="70" y="380" font-family="${FONT}" font-size="64" font-weight="700" fill="${INK}">${esc(site.name)}</text>
-      <text x="70" y="428" font-family="${FONT}" font-size="28" fill="${GREY}">${esc(site.role.en)} — ${esc(site.location)}</text>
+      <text x="70" y="428" font-family="${FONT}" font-size="28" fill="${GREY}">${esc([site.role.en, site.location].filter(Boolean).join(' — '))}</text>
       <text x="70" y="${H - 56}" font-family="${FONT}" font-size="20" fill="${GREY}">${esc(HOST)}</text>
     </svg>`,
   );
